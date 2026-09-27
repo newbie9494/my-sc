@@ -1,203 +1,189 @@
--- [[ ALIT HUB PART 1 - BASE INITIALIZATION ]]
+-- [[ ALIT HUB ORIGINAL PART 1 ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
 
-pcall(function()
-    if game:GetService("ReplicatedStorage"):FindFirstChild("AddStrike") then
-        game:GetService("ReplicatedStorage").AddStrike:Destroy()
-    end
-end)
-
-local mt = getrawmetatable(game)
-local old_namecall = mt.__namecall
-setreadonly(mt, false)
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    if string.lower(method) == "kick" then return nil end
-    if method == "Destroy" or method == "destroy" then
-        if self == getcallingscript() then return nil end
-    end
-    return old_namecall(self, ...)
-end)
-setreadonly(mt, true)
+if PlayerGui:FindFirstChild("AlitHubUI") then 
+    PlayerGui.AlitHubUI:Destroy() 
+end
 
 _G.AlitHubFarmActive = false
 _G.AlitHubRestockActive = false
 _G.AlitHubPigActive = false
 task.wait(0.1)
 
-_G.SPD = 115   
-_G.TD = 0.75   
-_G.PPD = 0.55  
+local TARGET_MAPPING = {
+    ["Dupa"] = "Spawn_Dupa", ["Gagak"] = "Spawn_Gagak",
+    ["Jamur Kuburan"] = "Spawn_JamurKuburan", ["Kemenyan"] = "Spawn_Kemenyan",
+    ["Kepiting Sungai"] = "Spawn_KepitingSungai", ["Melati"] = "Spawn_Melati"
+}
+local RESTOCK_MAPPING = { ["Kepiting"] = "Kepiting", ["Sate Kepiting"] = "Sate Kepiting" }
+local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "PisangRajaRebus" }
 
-local TM = {["Dupa"]="Gagak", ["Gagak"]="Gagak", ["Jamur Kuburan"]="JamurKuburan", ["Kemenyan"]="Kemenyan", ["Kepiting Sungai"]="KepitingSungai", ["Melati"]="Melati"}
-local RM = {["Kepiting"]="Kepiting", ["Sate Kepiting"]="Sate Kepiting"}
-local FM = {["Jamur Rebus"]="JamurRebus", ["Pisang Raja Rebus"]="PisangRajaRebus"}
-_G.ST, _G.SR, _G.SF = {}, {}, {}
+local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
+local BLINK_SPEED, POST_PANEN_DELAY, TELEPORT_DELAY = 350, 0.3, 0.35
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
--- [[ ALIT HUB PART 2 - COREGUI FRAMEWORK ]]
-if CoreGui:FindFirstChild("AlitHubUI") then CoreGui.AlitHubUI:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "AlitHubUI"; ScreenGui.ResetOnSpawn = false
 
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Name = "MainFrame"; MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 240, 0, 420); MainFrame.BorderSizePixel = 0; MainFrame.Active = true; MainFrame.ClipsDescendants = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
-Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 200, 0)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 220, 0, 420); MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true; MainFrame.Active = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+-- [[ ALIT HUB ORIGINAL PART 2 ]]
+local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 45)
+local TitleButton = Instance.new("TextButton")
+TitleButton.Name = "TitleButton"; TitleButton.Parent = TopBar; TitleButton.BackgroundTransparency = 1; TitleButton.Position = UDim2.new(0, 15, 0, 0); TitleButton.Size = UDim2.new(0, 120, 0, 45)
+TitleButton.Font = Enum.Font.GothamBold; TitleButton.Text = "ALIT HUB"; TitleButton.TextColor3 = Color3.fromRGB(255, 215, 0); TitleButton.TextSize = 14; TitleButton.TextXAlignment = Enum.TextXAlignment.Left
 
-local TopBar = Instance.new("Frame", MainFrame); TopBar.Size = UDim2.new(1, 0, 0, 40); TopBar.BackgroundTransparency = 1
-local Title = Instance.new("TextLabel", TopBar); Title.BackgroundTransparency = 1; Title.Position = UDim2.new(0, 12, 0, 0); Title.Size = UDim2.new(0, 120, 1, 0); Title.Font = Enum.Font.GothamBold; Title.Text = "ALIT HUB"; Title.TextColor3 = Color3.fromRGB(255, 200, 0); Title.TextSize = 13; Title.TextXAlignment = Enum.TextXAlignment.Left
+local MiniButton = Instance.new("TextButton")
+MiniButton.Name = "MiniButton"; MiniButton.Parent = TopBar; MiniButton.BackgroundTransparency = 1; MiniButton.Position = UDim2.new(1, -35, 0, 0); MiniButton.Size = UDim2.new(0, 30, 0, 45)
+MiniButton.Font = Enum.Font.GothamBold; MiniButton.Text = "-"; MiniButton.TextColor3 = Color3.fromRGB(200, 200, 200); MiniButton.TextSize = 20
 
-local MiniButton = Instance.new("TextButton", TopBar); MiniButton.BackgroundTransparency = 1; MiniButton.Position = UDim2.new(1, -35, 0, 0); MiniButton.Size = UDim2.new(0, 30, 1, 0); MiniButton.Font = Enum.Font.GothamBold; MiniButton.Text = "-"; MiniButton.TextColor3 = Color3.fromRGB(200, 200, 200); MiniButton.TextSize = 18
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"; ContentFrame.Parent = MainFrame; ContentFrame.BackgroundTransparency = 1; ContentFrame.Position = UDim2.new(0, 0, 0, 45); ContentFrame.Size = UDim2.new(1, 0, 1, -45)
 
-local OpenButton = Instance.new("TextButton", ScreenGui)
-OpenButton.Name = "OpenButton"; OpenButton.BackgroundColor3 = Color3.fromRGB(15, 15, 18); OpenButton.Position = UDim2.new(0, 10, 0.4, 0); OpenButton.Size = UDim2.new(0, 85, 0, 35); OpenButton.Font = Enum.Font.GothamBold; OpenButton.Text = "ALIT HUB"; OpenButton.TextColor3 = Color3.fromRGB(255, 200, 0); OpenButton.TextSize = 11; OpenButton.Visible = false
-Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", OpenButton).Color = Color3.fromRGB(255, 200, 0)
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"; ToggleButton.Parent = ContentFrame; ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.Position = UDim2.new(0.04, 0, 0.02, 0); ToggleButton.Size = UDim2.new(0.29, 0, 0, 32)
+ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM"; ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255); ToggleButton.TextSize = 10
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 5)
 
-MiniButton.Activated:Connect(function() MainFrame.Visible = false OpenButton.Visible = true end)
-OpenButton.Activated:Connect(function() OpenButton.Visible = false MainFrame.Visible = true end)
+local RestockButton = Instance.new("TextButton")
+RestockButton.Name = "RestockButton"; RestockButton.Parent = ContentFrame; RestockButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); RestockButton.Position = UDim2.new(0.36, 0, 0.02, 0); RestockButton.Size = UDim2.new(0.29, 0, 0, 32)
+RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "STOCK"; RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255); RestockButton.TextSize = 10
+Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 5)
 
-local TabBar = Instance.new("Frame", MainFrame); TabBar.Position = UDim2.new(0, 10, 0, 45); TabBar.Size = UDim2.new(1, -20, 0, 30); TabBar.BackgroundTransparency = 1
-Instance.new("UIListLayout", TabBar).FillDirection = Enum.FillDirection.Horizontal
-_G.CF = Instance.new("Frame", MainFrame); _G.CF.Position = UDim2.new(0, 10, 0, 85); _G.CF.Size = UDim2.new(1, -20, 1, -95); _G.CF.BackgroundTransparency = 1
+local PigButton = Instance.new("TextButton")
+PigButton.Name = "PigButton"; PigButton.Parent = ContentFrame; PigButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); PigButton.Position = UDim2.new(0.68, 0, 0.02, 0); PigButton.Size = UDim2.new(0.29, 0, 0, 32)
+PigButton.Font = Enum.Font.GothamBold; PigButton.Text = "PIG"; PigButton.TextColor3 = Color3.fromRGB(255, 255, 255); PigButton.TextSize = 10
+Instance.new("UICorner", PigButton).CornerRadius = UDim.new(0, 5)
+-- [[ ALIT HUB ORIGINAL PART 3 ]]
+local DropdownButton = Instance.new("TextButton")
+DropdownButton.Name = "DropdownButton"; DropdownButton.Parent = ContentFrame; DropdownButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton.Position = UDim2.new(0.05, 0, 0.12, 0); DropdownButton.Size = UDim2.new(0.9, 0, 0, 28)
+DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "TARGET FARM ▼"; DropdownButton.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton.TextSize = 10
+Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 5)
 
-local Tabs = {}
-local function CreateTab(tabName)
-    local Page = Instance.new("ScrollingFrame", _G.CF); Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Visible = false; Page.BorderSizePixel = 0; Page.ScrollBarThickness = 2; Page.CanvasSize = UDim2.new(0,0,0,320)
-    Instance.new("UIListLayout", Page).Padding = UDim.new(0, 6)
-    local TabBtn = Instance.new("TextButton", TabBar); TabBtn.Size = UDim2.new(0, 68, 1, 0); TabBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 30); TabBtn.Font = Enum.Font.GothamBold; TabBtn.Text = tabName; TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180); TabBtn.TextSize = 9
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 4)
-    local tStroke = Instance.new("UIStroke", TabBtn); tStroke.Color = Color3.fromRGB(45, 45, 50)
-    TabBtn.Activated:Connect(function()
-        for _, t in pairs(Tabs) do t.Page.Visible = false t.Btn.TextColor3 = Color3.fromRGB(180, 180, 180) t.Stroke.Color = Color3.fromRGB(45, 45, 50) end
-        Page.Visible = true TabBtn.TextColor3 = Color3.fromRGB(255, 200, 0) tStroke.Color = Color3.fromRGB(255, 200, 0)
-    end)
-    Tabs[tabName] = {Page = Page, Btn = TabBtn, Stroke = tStroke}
-    return Page
+local ListContainer = Instance.new("ScrollingFrame")
+ListContainer.Name = "ListContainer"; ListContainer.Parent = ContentFrame; ListContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer.Position = UDim2.new(0.05, 0, 0.20, 0); ListContainer.Size = UDim2.new(0.9, 0, 0, 60); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 3; ListContainer.Visible = false
+Instance.new("UICorner", ListContainer).CornerRadius = UDim.new(0, 5)
+local UIListLayout = Instance.new("UIListLayout"); UIListLayout.Parent = ListContainer; UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout.Padding = UDim.new(0, 2)
+
+local DropdownButton2 = Instance.new("TextButton")
+DropdownButton2.Name = "DropdownButton2"; DropdownButton2.Parent = ContentFrame; DropdownButton2.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton2.Position = UDim2.new(0.05, 0, 0.40, 0); DropdownButton2.Size = UDim2.new(0.9, 0, 0, 28)
+DropdownButton2.Font = Enum.Font.GothamSemibold; DropdownButton2.Text = "TARGET RESTOCK ▼"; DropdownButton2.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton2.TextSize = 10
+Instance.new("UICorner", DropdownButton2).CornerRadius = UDim.new(0, 5)
+
+local ListContainer2 = Instance.new("ScrollingFrame")
+ListContainer2.Name = "ListContainer2"; ListContainer2.Parent = ContentFrame; ListContainer2.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer2.Position = UDim2.new(0.05, 0, 0.48, 0); ListContainer2.Size = UDim2.new(0.9, 0, 0, 45)
+ListContainer2.BorderSizePixel = 0; ListContainer2.ScrollBarThickness = 3; ListContainer2.Visible = false
+Instance.new("UICorner", ListContainer2).CornerRadius = UDim.new(0, 5)
+local UIListLayout2 = Instance.new("UIListLayout"); UIListLayout2.Parent = ListContainer2; UIListLayout2.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout2.Padding = UDim.new(0, 2)
+
+local DropdownButton3 = Instance.new("TextButton")
+DropdownButton3.Name = "DropdownButton3"; DropdownButton3.Parent = ContentFrame; DropdownButton3.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton3.Position = UDim2.new(0.05, 0, 0.68, 0); DropdownButton3.Size = UDim2.new(0.9, 0, 0, 28)
+DropdownButton3.Font = Enum.Font.GothamSemibold; DropdownButton3.Text = "TARGET PAKAN PIG ▼"; DropdownButton3.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton3.TextSize = 10
+Instance.new("UICorner", DropdownButton3).CornerRadius = UDim.new(0, 5)
+
+local ListContainer3 = Instance.new("ScrollingFrame")
+ListContainer3.Name = "ListContainer3"; ListContainer3.Parent = ContentFrame; ListContainer3.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer3.Position = UDim2.new(0.05, 0, 0.76, 0); ListContainer3.Size = UDim2.new(0.9, 0, 0, 45)
+ListContainer3.BorderSizePixel = 0; ListContainer3.ScrollBarThickness = 3; ListContainer3.Visible = false
+Instance.new("UICorner", ListContainer3).CornerRadius = UDim.new(0, 5)
+local UIListLayout3 = Instance.new("UIListLayout"); UIListLayout3.Parent = ListContainer3; UIListLayout3.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout3.Padding = UDim.new(0, 2)
+
+MiniButton.Activated:Connect(function() ContentFrame.Visible = false; MiniButton.Visible = false; MainFrame.Position = UDim2.new(0, 10, 0.4, 0); MainFrame.Size = UDim2.new(0, 100, 0, 45) end)
+TitleButton.Activated:Connect(function() if not ContentFrame.Visible then MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 220, 0, 420); ContentFrame.Visible = true; MiniButton.Visible = true end end)
+
+for disp, ws in pairs(TARGET_MAPPING) do
+    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() local idx = table.find(SelectedTargets, ws) if idx then table.remove(SelectedTargets, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedTargets, ws); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
+end
+for disp, tool in pairs(RESTOCK_MAPPING) do
+    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer2; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() local idx = table.find(SelectedRestock, tool) if idx then table.remove(SelectedRestock, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedRestock, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
+end
+for disp, tool in pairs(FEED_MAPPING) do
+    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer3; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() local idx = table.find(SelectedFeed, tool) if idx then table.remove(SelectedFeed, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedFeed, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
 end
 
-local PageFarm = CreateTab("Main Farm")
-local PageStock = CreateTab("Restock Kios")
-local PagePig = CreateTab("Pig Farm")
-Tabs["Main Farm"].Page.Visible = true
-Tabs["Main Farm"].Btn.TextColor3 = Color3.fromRGB(255, 200, 0)
-Tabs["Main Farm"].Stroke.Color = Color3.fromRGB(255, 200, 0)
--- [[ ALIT HUB PART 3 - TARGET HOOK & CONTROLS ]]
-local function AddToggle(parent, text, callback)
-    local tFrame = Instance.new("Frame", parent); tFrame.Size = UDim2.new(1, 0, 0, 35); tFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
-    Instance.new("UICorner", tFrame).CornerRadius = UDim.new(0, 5)
-    local lbl = Instance.new("TextLabel", tFrame); lbl.BackgroundTransparency = 1; lbl.Position = UDim2.new(0, 10, 0, 0); lbl.Size = UDim2.new(0.6, 0, 1, 0); lbl.Font = Enum.Font.GothamSemibold; lbl.Text = text; lbl.TextColor3 = Color3.fromRGB(220, 220, 220); lbl.TextSize = 10; lbl.TextXAlignment = Enum.TextXAlignment.Left
-    local btn = Instance.new("TextButton", tFrame); btn.Position = UDim2.new(1, -65, 0, 6); btn.Size = UDim2.new(0, 55, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(220, 53, 69); btn.Font = Enum.Font.GothamBold; btn.Text = "OFF"; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.TextSize = 9
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    btn.Activated:Connect(function() local status = callback() btn.BackgroundColor3 = status and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69) btn.Text = status and "ON" or "OFF" end)
+ListContainer.CanvasSize = UDim2.new(0, 0, 0, 160); ListContainer2.CanvasSize = UDim2.new(0, 0, 0, 60); ListContainer3.CanvasSize = UDim2.new(0, 0, 0, 60)
+DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "TARGET FARM ▲" or "TARGET FARM ▼" end)
+DropdownButton2.Activated:Connect(function() ListContainer2.Visible = not ListContainer2.Visible; DropdownButton2.Text = ListContainer2.Visible and "TARGET RESTOCK ▲" or "TARGET RESTOCK ▼" end)
+DropdownButton3.Activated:Connect(function() ListContainer3.Visible = not ListContainer3.Visible; DropdownButton3.Text = ListContainer3.Visible and "TARGET PAKAN PIG ▲" or "TARGET PAKAN PIG ▼" end)
+
+ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); ToggleButton.Text = _G.AlitHubFarmActive and "FARM: ON" or "FARM: OFF" end)
+RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "STOCK: ON" or "STOCK: OFF" end)
+PigButton.Activated:Connect(function() _G.AlitHubPigActive = not _G.AlitHubPigActive; PigButton.BackgroundColor3 = _G.AlitHubPigActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); PigButton.Text = _G.AlitHubPigActive and "PIG: ON" or "PIG: OFF" end)
+-- [[ ALIT HUB ORIGINAL PART 4 ]]
+local function equipItem(itemName)
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    local char = LocalPlayer.Character
+    if bp and char then
+        local tool = bp:FindFirstChild(itemName)
+        if tool and char:FindFirstChildOfClass("Humanoid") then char.Humanoid:EquipTool(tool); return true end
+    end
+    return char and char:FindFirstChild(itemName) ~= nil
 end
 
-local function AddDropdownList(parent, title, mapping, targetTable)
-    for disp, ws in pairs(mapping) do
-        local b = Instance.new("TextButton", parent); b.Size = UDim2.new(1, 0, 0, 26); b.BackgroundColor3 = Color3.fromRGB(22, 22, 26); b.Font = Enum.Font.Gotham; b.Text = "  " .. disp; b.TextColor3 = Color3.fromRGB(180, 180, 180); b.TextSize = 10; b.TextXAlignment = Enum.TextXAlignment.Left
-        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
-        local bStr = Instance.new("UIStroke", b); bStr.Color = Color3.fromRGB(35, 35, 40)
-        b.Activated:Connect(function()
-            local idx = table.find(targetTable, ws)
-            if idx then table.remove(targetTable, idx) bStr.Color = Color3.fromRGB(35, 35, 40) b.TextColor3 = Color3.fromRGB(180, 180, 180)
-            else table.insert(targetTable, ws) bStr.Color = Color3.fromRGB(255, 200, 0) b.TextColor3 = Color3.fromRGB(255, 200, 0) end
-        end)
+local function blinkTravelTo(root, humanoid, targetCFrame)
+    if root and humanoid then
+        local distance = (root.Position - targetCFrame.Position).Magnitude
+        local duration = distance / BLINK_SPEED
+        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+        root.Velocity = Vector3.new(0, 0, 0)
+        local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+        tween:Play(); tween.Completed:Wait()
+        root.Velocity = Vector3.new(0, 0, 0)
+        humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
     end
 end
-
-AddToggle(PageFarm, "Automation Farm", function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive return _G.AlitHubFarmActive end)
-AddDropdownList(PageFarm, "Bahan", TM, _G.ST)
-AddToggle(PageStock, "Automation Restock", function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive return _G.AlitHubRestockActive end)
-AddDropdownList(PageStock, "Kios", RM, _G.SR)
-AddToggle(PagePig, "Automation Pig", function() _G.AlitHubPigActive = not _G.AlitHubPigActive return _G.AlitHubPigActive end)
-AddDropdownList(PagePig, "Pakan", FM, _G.SF)
 
 local dragToggle, dragInput, dragStart, startPos
-MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragToggle = true dragStart = input.Position startPos = MainFrame.Position input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end) end end)
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end)
+    end
+end)
 MainFrame.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
-game:GetService("UserInputService").InputChanged:Connect(function(input) if input == dragInput and dragToggle then local delta = input.Position - dragStart MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
-LocalPlayer.Idled:Connect(function() if _G.AlitHubFarmActive or _G.AlitHubRestockActive or _G.AlitHubPigActive then game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame) task.wait(0.5) game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end end)
--- [[ ALIT HUB PART 4 - WORKSPACE SIMULATION LOOP ]]
-local function eq(n)
-    local bp = LocalPlayer:FindFirstChild("Backpack") local char = LocalPlayer.Character
-    if bp and char then 
-        local tool = bp:FindFirstChild(n) 
-        if tool and char:FindFirstChildOfClass("Humanoid") then 
-            char.Humanoid:EquipTool(tool) 
-            task.wait(0.2)
-            return true 
-        end 
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragToggle then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-    return char and char:FindFirstChild(n) ~= nil
-end
+end)
 
-local function fp(p)
-    if not p or not p.Enabled then return end
-    pcall(function()
-        p:InputHoldBegin()
-        task.wait(p.HoldDuration + 0.08) 
-        p:InputHoldEnd()
-        if fireproximityprompt then fireproximityprompt(p) end
-    end)
-end
-
-local function tv(r, h, t)
-    if r and h then
-        h:ChangeState(Enum.HumanoidStateType.Physics); r.Velocity = Vector3.new(0, 0, 0)
-        local tw = TweenService:Create(r, TweenInfo.new((r.Position - t.Position).Magnitude / _G.SPD, Enum.EasingStyle.Linear), {CFrame = t})
-        tw:Play() tw.Completed:Wait(); r.Velocity = Vector3.new(0, 0, 0); h:ChangeState(Enum.HumanoidStateType.Freefall)
+LocalPlayer.Idled:Connect(function()
+    if _G.AlitHubFarmActive or _G.AlitHubRestockActive or _G.AlitHubPigActive then
+        local vu = game:GetService("VirtualUser")
+        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(0.5); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     end
-end
+end)
 
 task.spawn(function()
     while true do
-        task.wait(0.5)
-        local char = LocalPlayer.Character local r = char and char:FindFirstChild("HumanoidRootPart") local hum = char and char:FindFirstChildOfClass("Humanoid")
+        task.wait(0.3)
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
         
-        if _G.AlitHubFarmActive and #_G.ST > 0 and r and hum then
-            local f = workspace:FindFirstChild("SpawnBahan")
-            if f then
-                for _, o in pairs(f:GetChildren()) do
-                    if not _G.AlitHubFarmActive then break end
-                    if table.find(_G.ST, o.Name) or (o.Name == "Gagak" and table.find(_G.ST, "Dupa")) then
-                        local p = o:FindFirstChildWhichIsA("ProximityPrompt", true)
-                        if p and p.Enabled and p.Parent then
-                            local pt = p.Parent:IsA("BasePart") and p.Parent or o:FindFirstChildWhichIsA("BasePart", true)
-                            if pt then 
-                                tv(r, hum, pt.CFrame * CFrame.new(0, 1.2, 0)) 
-                                task.wait(_G.TD) 
-                                if _G.AlitHubFarmActive and p.Enabled then fp(p) task.wait(_G.PPD) end 
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        
-        if _G.AlitHubRestockActive and #_G.SR > 0 and r and hum then
-            local folderKios = workspace:FindFirstChild("KiosAktif")
-            local k = folderKios and folderKios:FindFirstChild("Kios_" .. LocalPlayer.Name)
-            if k then
-                for i = 1, 3 do 
-                    if not _G.AlitHubRestockActive then break end
-                    local s = k:FindFirstChild("slot" .. i)
-                    if s then
-                        local p = s:FindFirstChild("RakPrompt") or s:FindFirstChildWhichIsA("ProximityPrompt", true)
-                        if p and p.Enabled then
-                            for _, toolName in ipairs(_G.SR) do
-                                if eq(toolName) then
-                                    local pt = s:IsA("BasePart") and s or s:FindFirstChildWhichIsA("BasePart", true) or k.PrimaryPart
-                                    if pt then 
-                                        tv(r, hum, s.CFrame * CFrame.new(0, 1.5, 0)) 
-                                        task.wait(_G.TD) 
-                                        if p.Enabled and _G.AlitHubRestockActive then fp(p) task.wait(_G.PPD) end 
-                                    end
-                                    break
+        if _G.AlitHubFarmActive and #SelectedTargets > 0 and root and hum then
+            local folder = workspace:FindFirstChild("SpawnBahan")
+            if folder then
+                for _, obj in pairs(folder:GetChildren()) do
+                    if table.find(SelectedTargets, obj.Name) then
+                        local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        if prompt and prompt.Enabled and prompt.Parent then
+                            local part = prompt.Parent:IsA("BasePart") and prompt.Parent or obj:FindFirstChildWhichIsA("BasePart", true)
+                            if part then
+                                blinkTravelTo(root, hum, part.CFrame); task.wait(TELEPORT_DELAY)
+                                if _G.AlitHubFarmActive and prompt.Enabled then
+                                    if fireproximityprompt then fireproximityprompt(prompt) end
+                                    prompt:InputHoldBegin(); task.wait(prompt.HoldDuration + 0.05); prompt:InputHoldEnd()
+                                    task.wait(POST_PANEN_DELAY)
                                 end
                             end
                         end
@@ -206,24 +192,23 @@ task.spawn(function()
             end
         end
         
-        if _G.AlitHubPigActive and r and hum then
-            local kd = workspace:FindFirstChild("KandangBabi_" .. LocalPlayer.UserId) or workspace:FindFirstChild("KandangBabi_" .. LocalPlayer.Name)
-            if kd then
-                local tm = kd:FindFirstChild("TempatMakan") or kd:FindFirstChild("Tempat Makan")
-                if tm and #_G.SF > 0 then
-                    local p = tm:FindFirstChildWhichIsA("ProximityPrompt", true)
-                    if p then
-                        local ts = p.ObjectText or ""
-                        if string.find(ts, "0/10") or ts == "" then
-                            for _, fN in ipairs(_G.SF) do
-                                if eq(fN) then
-                                    local pt = tm:IsA("BasePart") and tm or tm:FindFirstChildWhichIsA("BasePart", true)
-                                    if pt then
-                                        tv(r, hum, pt.CFrame) task.wait(_G.TD)
-                                        for c = 1, 10 do 
-                                            if not p.Enabled or not _G.AlitHubPigActive or string.find(p.ObjectText, "10/10") or not eq(fN) then break end 
-                                            fp(p) 
-                                            task.wait(0.38) 
+        if _G.AlitHubRestockActive and #SelectedRestock > 0 and root and hum then
+            local kios = workspace:FindFirstChild("Kios_" .. LocalPlayer.Name)
+            if kios then
+                for i = 1, 12 do
+                    local slot = kios:FindFirstChild("slot" .. i) or kios:FindFirstChild("slot " .. i)
+                    if slot then
+                        local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        if prompt and prompt.Enabled then
+                            for _, toolName in ipairs(SelectedRestock) do
+                                if equipItem(toolName) then
+                                    local targetPart = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
+                                    if targetPart then
+                                        blinkTravelTo(root, hum, targetPart.CFrame); task.wait(TELEPORT_DELAY)
+                                        if prompt.Enabled and _G.AlitHubRestockActive then
+                                            if fireproximityprompt then fireproximityprompt(prompt) end
+                                            prompt:InputHoldBegin(); task.wait(prompt.HoldDuration + 0.05); prompt:InputHoldEnd()
+                                            task.wait(POST_PANEN_DELAY)
                                         end
                                     end
                                     break
@@ -232,15 +217,54 @@ task.spawn(function()
                         end
                     end
                 end
-                for _, b in pairs(kd:GetChildren()) do
-                    if not _G.AlitHubPigActive then break end
-                    if string.find(string.lower(b.Name), "babi") or b:FindFirstChild("Fase") then
-                        local sf = b:FindFirstChild("Fase") or b:FindFirstChild("Status")
-                        if sf and (string.find(string.lower(tostring(sf.Value)), "dewasa") or string.find(string.lower(b.Name), "dewasa")) then
-                            local p = b:FindFirstChildWhichIsA("ProximityPrompt", true)
-                            if p and p.Enabled then
-                                local pt = b:IsA("BasePart") and b or b:FindFirstChildWhichIsA("BasePart", true)
-                                if pt then tv(r, hum, pt.CFrame) task.wait(_G.TD) if p.Enabled and _G.AlitHubPigActive then fp(p) task.wait(_G.PPD) end end
+            end
+        end
+
+        if _G.AlitHubPigActive and root and hum then
+            local kandang = workspace:FindFirstChild("KandangBabi_" .. LocalPlayer.UserId) or workspace:FindFirstChild("KandangBabi_" .. LocalPlayer.Name)
+            if kandang then
+                local tempatMakan = kandang:FindFirstChild("TempatMakan") or kandang:FindFirstChild("Tempat Makan")
+                if tempatMakan and #SelectedFeed > 0 then
+                    local pakanPrompt = tempatMakan:FindFirstChildWhichIsA("ProximityPrompt", true)
+                    if pakanPrompt then
+                        local textStatus = pakanPrompt.ObjectText or ""
+                        if string.find(textStatus, "0/10") or textStatus == "" then
+                            for _, foodName in ipairs(SelectedFeed) do
+                                if equipItem(foodName) then
+                                    local pmPart = tempatMakan:IsA("BasePart") and tempatMakan or tempatMakan:FindFirstChildWhichIsA("BasePart", true)
+                                    if pmPart then
+                                        blinkTravelTo(root, hum, pmPart.CFrame); task.wait(TELEPORT_DELAY)
+                                        while pakanPrompt.Enabled and _G.AlitHubPigActive and not string.find(pakanPrompt.ObjectText, "10/10") do
+                                            if fireproximityprompt then fireproximityprompt(pakanPrompt) end
+                                            pakanPrompt:InputHoldBegin(); task.wait(pakanPrompt.HoldDuration + 0.05); pakanPrompt:InputHoldEnd()
+                                            task.wait(0.2)
+                                            if not equipItem(foodName) then break end
+                                        end
+                                    end
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+                for _, babi in pairs(kandang:GetChildren()) do
+                    if string.find(string.lower(babi.Name), "babi") or babi:FindFirstChild("Fase") then
+                        local statusFase = babi:FindFirstChild("Fase") or babi:FindFirstChild("Status")
+                        if statusFase then
+                            local faseValue = tostring(statusFase.Value)
+                            if string.find(string.lower(faseValue), "dewasa") or string.find(string.lower(babi.Name), "dewasa") then
+                                local panenPrompt = babi:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if panenPrompt and panenPrompt.Enabled then
+                                    local babiPart = babi:IsA("BasePart") and babi or babi:FindFirstChildWhichIsA("BasePart", true)
+                                    if babiPart then
+                                        blinkTravelTo(root, hum, babiPart.CFrame); task.wait(TELEPORT_DELAY)
+                                        if panenPrompt.Enabled and _G.AlitHubPigActive then
+                                            if fireproximityprompt then fireproximityprompt(panenPrompt) end
+                                            panenPrompt:InputHoldBegin(); task.wait(panenPrompt.HoldDuration + 0.05); panenPrompt:InputHoldEnd()
+                                            task.wait(POST_PANEN_DELAY)
+                                        end
+                                    end
+                                end
                             end
                         end
                     end
