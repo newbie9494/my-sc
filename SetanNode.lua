@@ -1,4 +1,4 @@
--- [[ ALIT HUB PART 1 - BYPASS & SETTINGS ]]
+-- [[ ALIT HUB PART 1 - BASE INITIALIZATION ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -29,16 +29,16 @@ _G.AlitHubRestockActive = false
 _G.AlitHubPigActive = false
 task.wait(0.1)
 
-_G.SPD = 110   
-_G.TD = 0.65   
-_G.PPD = 0.45  
+_G.SPD = 115   
+_G.TD = 0.75   
+_G.PPD = 0.55  
 
-local TM = {["Dupa"]="Spawn_Dupa", ["Gagak"]="Spawn_Gagak", ["Jamur Kuburan"]="Spawn_JamurKuburan", ["Kemenyan"]="Spawn_Kemenyan", ["Kepiting Sungai"]="Spawn_KepitingSungai", ["Melati"]="Spawn_Melati"}
+local TM = {["Dupa"]="Gagak", ["Gagak"]="Gagak", ["Jamur Kuburan"]="JamurKuburan", ["Kemenyan"]="Kemenyan", ["Kepiting Sungai"]="KepitingSungai", ["Melati"]="Melati"}
 local RM = {["Kepiting"]="Kepiting", ["Sate Kepiting"]="Sate Kepiting"}
 local FM = {["Jamur Rebus"]="JamurRebus", ["Pisang Raja Rebus"]="PisangRajaRebus"}
 _G.ST, _G.SR, _G.SF = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
--- [[ ALIT HUB PART 2 - CORE GUI LAYOUT ]]
+-- [[ ALIT HUB PART 2 - COREGUI FRAMEWORK ]]
 if CoreGui:FindFirstChild("AlitHubUI") then CoreGui.AlitHubUI:Destroy() end
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "AlitHubUI"; ScreenGui.ResetOnSpawn = false
@@ -87,7 +87,7 @@ local PagePig = CreateTab("Pig Farm")
 Tabs["Main Farm"].Page.Visible = true
 Tabs["Main Farm"].Btn.TextColor3 = Color3.fromRGB(255, 200, 0)
 Tabs["Main Farm"].Stroke.Color = Color3.fromRGB(255, 200, 0)
--- [[ ALIT HUB PART 3 - UI CONTROL & UTILITIES ]]
+-- [[ ALIT HUB PART 3 - TARGET HOOK & CONTROLS ]]
 local function AddToggle(parent, text, callback)
     local tFrame = Instance.new("Frame", parent); tFrame.Size = UDim2.new(1, 0, 0, 35); tFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
     Instance.new("UICorner", tFrame).CornerRadius = UDim.new(0, 5)
@@ -122,14 +122,14 @@ MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.User
 MainFrame.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
 game:GetService("UserInputService").InputChanged:Connect(function(input) if input == dragInput and dragToggle then local delta = input.Position - dragStart MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
 LocalPlayer.Idled:Connect(function() if _G.AlitHubFarmActive or _G.AlitHubRestockActive or _G.AlitHubPigActive then game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame) task.wait(0.5) game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end end)
--- [[ ALIT HUB PART 4 - ENGINE TELEPORT & PROXIMITY UTAMA ]]
+-- [[ ALIT HUB PART 4 - WORKSPACE SIMULATION LOOP ]]
 local function eq(n)
     local bp = LocalPlayer:FindFirstChild("Backpack") local char = LocalPlayer.Character
     if bp and char then 
         local tool = bp:FindFirstChild(n) 
         if tool and char:FindFirstChildOfClass("Humanoid") then 
             char.Humanoid:EquipTool(tool) 
-            task.wait(0.1)
+            task.wait(0.2)
             return true 
         end 
     end
@@ -138,7 +138,12 @@ end
 
 local function fp(p)
     if not p or not p.Enabled then return end
-    if fireproximityprompt then fireproximityprompt(p) else p:InputHoldBegin() task.wait(p.HoldDuration + 0.05) p:InputHoldEnd() end
+    pcall(function()
+        p:InputHoldBegin()
+        task.wait(p.HoldDuration + 0.08) 
+        p:InputHoldEnd()
+        if fireproximityprompt then fireproximityprompt(p) end
+    end)
 end
 
 local function tv(r, h, t)
@@ -151,7 +156,7 @@ end
 
 task.spawn(function()
     while true do
-        task.wait(0.4)
+        task.wait(0.5)
         local char = LocalPlayer.Character local r = char and char:FindFirstChild("HumanoidRootPart") local hum = char and char:FindFirstChildOfClass("Humanoid")
         
         if _G.AlitHubFarmActive and #_G.ST > 0 and r and hum then
@@ -159,11 +164,15 @@ task.spawn(function()
             if f then
                 for _, o in pairs(f:GetChildren()) do
                     if not _G.AlitHubFarmActive then break end
-                    if table.find(_G.ST, o.Name) then
+                    if table.find(_G.ST, o.Name) or (o.Name == "Gagak" and table.find(_G.ST, "Dupa")) then
                         local p = o:FindFirstChildWhichIsA("ProximityPrompt", true)
                         if p and p.Enabled and p.Parent then
                             local pt = p.Parent:IsA("BasePart") and p.Parent or o:FindFirstChildWhichIsA("BasePart", true)
-                            if pt then tv(r, hum, pt.CFrame) task.wait(_G.TD) if _G.AlitHubFarmActive and p.Enabled then fp(p) task.wait(_G.PPD) end end
+                            if pt then 
+                                tv(r, hum, pt.CFrame * CFrame.new(0, 1.2, 0)) 
+                                task.wait(_G.TD) 
+                                if _G.AlitHubFarmActive and p.Enabled then fp(p) task.wait(_G.PPD) end 
+                            end
                         end
                     end
                 end
@@ -171,18 +180,23 @@ task.spawn(function()
         end
         
         if _G.AlitHubRestockActive and #_G.SR > 0 and r and hum then
-            local k = workspace:FindFirstChild("Kios_" .. LocalPlayer.Name)
+            local folderKios = workspace:FindFirstChild("KiosAktif")
+            local k = folderKios and folderKios:FindFirstChild("Kios_" .. LocalPlayer.Name)
             if k then
-                for i = 1, 12 do
+                for i = 1, 3 do 
                     if not _G.AlitHubRestockActive then break end
-                    local s = k:FindFirstChild("slot" .. i) or k:FindFirstChild("slot " .. i)
+                    local s = k:FindFirstChild("slot" .. i)
                     if s then
-                        local p = s:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        local p = s:FindFirstChild("RakPrompt") or s:FindFirstChildWhichIsA("ProximityPrompt", true)
                         if p and p.Enabled then
-                            for _, tN in ipairs(_G.SR) do
-                                if eq(tN) then
-                                    local pt = s:IsA("BasePart") and s or s:FindFirstChildWhichIsA("BasePart", true)
-                                    if pt then tv(r, hum, pt.CFrame) task.wait(_G.TD) if p.Enabled and _G.AlitHubRestockActive then fp(p) task.wait(_G.PPD) end end
+                            for _, toolName in ipairs(_G.SR) do
+                                if eq(toolName) then
+                                    local pt = s:IsA("BasePart") and s or s:FindFirstChildWhichIsA("BasePart", true) or k.PrimaryPart
+                                    if pt then 
+                                        tv(r, hum, s.CFrame * CFrame.new(0, 1.5, 0)) 
+                                        task.wait(_G.TD) 
+                                        if p.Enabled and _G.AlitHubRestockActive then fp(p) task.wait(_G.PPD) end 
+                                    end
                                     break
                                 end
                             end
@@ -206,7 +220,11 @@ task.spawn(function()
                                     local pt = tm:IsA("BasePart") and tm or tm:FindFirstChildWhichIsA("BasePart", true)
                                     if pt then
                                         tv(r, hum, pt.CFrame) task.wait(_G.TD)
-                                        for c = 1, 10 do if not p.Enabled or not _G.AlitHubPigActive or string.find(p.ObjectText, "10/10") or not eq(fN) then break end fp(p) task.wait(0.35) end
+                                        for c = 1, 10 do 
+                                            if not p.Enabled or not _G.AlitHubPigActive or string.find(p.ObjectText, "10/10") or not eq(fN) then break end 
+                                            fp(p) 
+                                            task.wait(0.38) 
+                                        end
                                     end
                                     break
                                 end
