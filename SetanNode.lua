@@ -24,7 +24,7 @@ local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
 -- SETTINGAN DELAY MANDIRI YANG SUDAH PAS SESUAI LOGIKA ANDA
 local TELEPORT_DELAY = 0.2      -- Jeda diam sejenak SETELAH TELEPORT INSTAN di target baru
-local MASA_TUNGGU = 1.5         -- Jeda masa tunggu diam di tempat SETELAH TARGET PANEN SELESAI
+local MASA_TUNGGU = 5         -- Jeda masa tunggu diam di tempat SETELAH TARGET PANEN SELESAI
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
