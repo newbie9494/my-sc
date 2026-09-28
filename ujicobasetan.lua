@@ -1,0 +1,314 @@
+-- [[ ALIT HUB VERSI REMAKE TOTAL - FIXED RESTOCK & MASAK PART 1 ]]
+if not game:IsLoaded() then game.Loaded:Wait() end
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
+
+if PlayerGui:FindFirstChild("AlitHubUI") then 
+    PlayerGui.AlitHubUI:Destroy() 
+end
+
+_G.AlitHubFarmActive = false
+_G.AlitHubRestockActive = false
+_G.AlitHubPigActive = false
+_G.AlitHubCookActive = false
+task.wait(0.1)
+
+local TARGET_MAPPING = {
+    ["Dupa"] = "Spawn_Dupa", ["Gagak"] = "Spawn_Gagak",
+    ["Jamur Kuburan"] = "Spawn_JamurKuburan", ["Kemenyan"] = "Spawn_Kemenyan",
+    ["Kepiting Sungai"] = "Spawn_KepitingSungai", ["Melati"] = "Spawn_Melati"
+}
+
+local RESTOCK_MAPPING = {
+    ["Kopi Kemenyan"] = "KopiKemenyan", ["Pisang Raja Rebus"] = "PisangRajaRebus",
+    ["Sate Gagak"] = "SateGagak", ["Kepiting Sungai"] = "KepitingSungai",
+    ["Tumis Kamboja"] = "TumisKamboja", ["Babi Guling"] = "BabiGuling"
+}
+
+local COOK_MAPPING = {
+    ["Sate Gagak"] = "SateGagak", ["Jamur Rebus Kuburan"] = "JamurRebus",
+    ["Tumis Kamboja"] = "TumisKamboja", ["Sate Kepiting"] = "SateKepiting",
+    ["Pisang Raja Rebus"] = "PisangRajaRebus", ["Kopi Kemenyan"] = "KopiKemenyan"
+}
+
+local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "PisangRajaRebus" }
+
+local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
+local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
+_G.SelectedCookMenu = "SateGagak"
+
+-- SETTINGAN DELAY MANDIRI YANG TERISOLASI PENUH SESUAI LOGIKA USER
+local TELEPORT_DELAY = 0.2      
+local MASA_TUNGGU = 5.0         
+local REPEAT_COOK_DELAY = 1.5   
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 220, 0, 420); MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true; MainFrame.Active = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+
+local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 45)
+local TitleButton = Instance.new("TextButton")
+TitleButton.Name = "TitleButton"; TitleButton.Parent = TopBar; TitleButton.BackgroundTransparency = 1; TitleButton.Position = UDim2.new(0, 15, 0, 0); TitleButton.Size = UDim2.new(0, 120, 0, 45)
+TitleButton.Font = Enum.Font.GothamBold; TitleButton.Text = "ALIT HUB V3"; TitleButton.TextColor3 = Color3.fromRGB(255, 215, 0); TitleButton.TextSize = 13; TitleButton.TextXAlignment = Enum.TextXAlignment.Left
+
+local MiniButton = Instance.new("TextButton")
+MiniButton.Name = "MiniButton"; MiniButton.Parent = TopBar; MiniButton.BackgroundTransparency = 1; MiniButton.Position = UDim2.new(1, -30, 0, 0); MiniButton.Size = UDim2.new(0, 25, 0, 45)
+MiniButton.Font = Enum.Font.GothamBold; MiniButton.Text = "-"; MiniButton.TextColor3 = Color3.fromRGB(200, 200, 200); MiniButton.TextSize = 20
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Name = "ContentFrame"; ContentFrame.Parent = MainFrame; ContentFrame.Position = UDim2.new(0, 0, 0, 45); ContentFrame.Size = UDim2.new(1, 0, 1, -45)
+-- [[ ALIT HUB VERSI REMAKE TOTAL - FIXED RESTOCK & MASAK PART 2 ]]
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"; ToggleButton.Parent = ContentFrame; ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.Position = UDim2.new(0.04, 0, 0.02, 0); ToggleButton.Size = UDim2.new(0.21, 0, 0, 30)
+ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM: OFF"; ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255); ToggleButton.TextSize = 8
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 5)
+
+local RestockButton = Instance.new("TextButton")
+RestockButton.Name = "RestockButton"; RestockButton.Parent = ContentFrame; RestockButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); RestockButton.Position = UDim2.new(0.28, 0, 0, 30); RestockButton.Size = UDim2.new(0.21, 0, 0, 30)
+RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "STOCK: OFF"; RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255); RestockButton.TextSize = 8
+Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 5)
+
+local PigButton = Instance.new("TextButton")
+PigButton.Name = "PigButton"; PigButton.Parent = ContentFrame; PigButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); PigButton.Position = UDim2.new(0.52, 0, 0, 30); PigButton.Size = UDim2.new(0.21, 0, 0, 30)
+PigButton.Font = Enum.Font.GothamBold; PigButton.Text = "PIG: OFF"; PigButton.TextColor3 = Color3.fromRGB(255, 255, 255); PigButton.TextSize = 8
+Instance.new("UICorner", PigButton).CornerRadius = UDim.new(0, 5)
+
+local CookButton = Instance.new("TextButton")
+CookButton.Name = "CookButton"; CookButton.Parent = ContentFrame; CookButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); CookButton.Position = UDim2.new(0.76, 0, 0, 30); CookButton.Size = UDim2.new(0.21, 0, 0, 30)
+CookButton.Font = Enum.Font.GothamBold; CookButton.Text = "COOK: OFF"; CookButton.TextColor3 = Color3.fromRGB(255, 255, 255); CookButton.TextSize = 8
+Instance.new("UICorner", CookButton).CornerRadius = UDim.new(0, 5)
+
+local DropdownButton = Instance.new("TextButton")
+DropdownButton.Name = "DropdownButton"; DropdownButton.Parent = ContentFrame; DropdownButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton.Position = UDim2.new(0.05, 0, 0.12, 0); DropdownButton.Size = UDim2.new(0.9, 0, 0, 26)
+DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "TARGET FARM ▼"; DropdownButton.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton.TextSize = 9
+Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 5)
+
+local ListContainer = Instance.new("ScrollingFrame")
+ListContainer.Name = "ListContainer"; ListContainer.Parent = ContentFrame; ListContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer.Position = UDim2.new(0.05, 0, 0.19, 0); ListContainer.Size = UDim2.new(0.9, 0, 0, 55); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 3; ListContainer.Visible = false
+Instance.new("UICorner", ListContainer).CornerRadius = UDim.new(0, 5)
+local UIListLayout = Instance.new("UIListLayout"); UIListLayout.Parent = ListContainer; UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout.Padding = UDim.new(0, 2)
+
+local DropdownButton2 = Instance.new("TextButton")
+DropdownButton2.Name = "DropdownButton2"; DropdownButton2.Parent = ContentFrame; DropdownButton2.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton2.Position = UDim2.new(0.05, 0, 0.35, 0); DropdownButton2.Size = UDim2.new(0.9, 0, 0, 26)
+DropdownButton2.Font = Enum.Font.GothamSemibold; DropdownButton2.Text = "TARGET RESTOCK ▼"; DropdownButton2.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton2.TextSize = 9
+Instance.new("UICorner", DropdownButton2).CornerRadius = UDim.new(0, 5)
+
+local ListContainer2 = Instance.new("ScrollingFrame")
+ListContainer2.Name = "ListContainer2"; ListContainer2.Parent = ContentFrame; ListContainer2.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer2.Position = UDim2.new(0.05, 0, 0.42, 0); ListContainer2.Size = UDim2.new(0.9, 0, 0, 55); ListContainer2.BorderSizePixel = 0; ListContainer2.ScrollBarThickness = 3; ListContainer2.Visible = false
+Instance.new("UICorner", ListContainer2).CornerRadius = UDim.new(0, 5)
+local UIListLayout2 = Instance.new("UIListLayout"); UIListLayout2.Parent = ListContainer2; UIListLayout2.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout2.Padding = UDim.new(0, 2)
+
+local DropdownButton3 = Instance.new("TextButton")
+DropdownButton3.Name = "DropdownButton3"; DropdownButton3.Parent = ContentFrame; DropdownButton3.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton3.Position = UDim2.new(0.05, 0, 0.58, 0); DropdownButton3.Size = UDim2.new(0.9, 0, 0, 26)
+DropdownButton3.Font = Enum.Font.GothamSemibold; DropdownButton3.Text = "MENU AUTO COOK: SATE GAGAK ▼"; DropdownButton3.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton3.TextSize = 9
+Instance.new("UICorner", DropdownButton3).CornerRadius = UDim.new(0, 5)
+
+local ListContainer3 = Instance.new("ScrollingFrame")
+ListContainer3.Name = "ListContainer3"; ListContainer3.Parent = ContentFrame; ListContainer3.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer3.Position = UDim2.new(0.05, 0, 0.65, 0); ListContainer3.Size = UDim2.new(0.9, 0, 0, 55); ListContainer3.BorderSizePixel = 0; ListContainer3.ScrollBarThickness = 3; ListContainer3.Visible = false
+Instance.new("UICorner", ListContainer3).CornerRadius = UDim.new(0, 5)
+local UIListLayout3 = Instance.new("UIListLayout"); UIListLayout3.Parent = ListContainer3; UIListLayout3.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout3.Padding = UDim.new(0, 2)
+
+MiniButton.Activated:Connect(function() ContentFrame.Visible = false; MiniButton.Visible = false; MainFrame.Position = UDim2.new(0, 10, 0.4, 0); MainFrame.Size = UDim2.new(0, 100, 0, 45) end)
+TitleButton.Activated:Connect(function() if not ContentFrame.Visible then MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 220, 0, 420); ContentFrame.Visible = true; MiniButton.Visible = true end end)
+
+for disp, ws in pairs(TARGET_MAPPING) do
+    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() local idx = table.find(SelectedTargets, ws) if idx then table.remove(SelectedTargets, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedTargets, ws); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
+end
+for disp, tool in pairs(RESTOCK_MAPPING) do
+    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer2; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() local idx = table.find(SelectedRestock, tool) if idx then table.remove(SelectedRestock, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedRestock, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
+end
+for disp, code in pairs(COOK_MAPPING) do
+    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(40, 35, 35); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(220, 220, 220); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer3; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() _G.SelectedCookMenu = code; DropdownButton3.Text = "MENU AUTO COOK: " .. string.upper(disp) .. " ▼"; ListContainer3.Visible = false end)
+end
+
+ListContainer.CanvasSize = UDim2.new(0, 0, 0, 140); ListContainer2.CanvasSize = UDim2.new(0, 0, 0, 140); ListContainer3.CanvasSize = UDim2.new(0, 0, 0, 140)
+DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "TARGET FARM ▲" or "TARGET FARM ▼" end)
+DropdownButton2.Activated:Connect(function() ListContainer2.Visible = not ListContainer2.Visible; DropdownButton2.Text = ListContainer2.Visible and "TARGET RESTOCK ▲" or "TARGET RESTOCK ▼" end)
+DropdownButton3.Activated:Connect(function() ListContainer3.Visible = not ListContainer3.Visible; DropdownButton3.Text = ListContainer3.Visible and "MENU AUTO COOK ▲" or "MENU AUTO COOK ▼" end)
+
+ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); ToggleButton.Text = _G.AlitHubFarmActive and "FARM: ON" or "FARM: OFF" end)
+RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "STOCK: ON" or "STOCK: OFF" end)
+PigButton.Activated:Connect(function() _G.AlitHubPigActive = not _G.AlitHubPigActive; PigButton.BackgroundColor3 = _G.AlitHubPigActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); PigButton.Text = _G.AlitHubPigActive and "PIG: ON" or "PIG: OFF" end)
+CookButton.Activated:Connect(function() _G.AlitHubCookActive = not _G.AlitHubCookActive; CookButton.BackgroundColor3 = _G.AlitHubCookActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); CookButton.Text = _G.AlitHubCookActive and "COOK: ON" or "COOK: OFF" end)
+-- [[ ALIT HUB VERSI REMAKE TOTAL - FIXED RESTOCK & MASAK PART 3 ]]
+local function equipItem(itemName)
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    local char = LocalPlayer.Character
+    if bp and char then
+        local tool = bp:FindFirstChild(itemName)
+        if tool and char:FindFirstChildOfClass("Humanoid") then char.Humanoid:EquipTool(tool); return true end
+    end
+    return char and char:FindFirstChild(itemName) ~= nil
+end
+
+local function instantTeleportTo(root, targetCFrame)
+    if root then
+        root.Velocity = Vector3.new(0, 0, 0); root.CFrame = targetCFrame; root.Velocity = Vector3.new(0, 0, 0)
+    end
+end
+
+local function executePerfectHarvest(prompt)
+    if not prompt or not prompt.Enabled then return end
+    task.wait(TELEPORT_DELAY)
+    prompt:InputHoldBegin(); task.wait(0.5); prompt:InputHoldEnd()
+    if fireproximityprompt then fireproximityprompt(prompt) end
+    task.wait(MASA_TUNGGU)
+end
+
+-- SYSTEM DRAGGABLE MANUAL (BYPASS EROR MOBILE)
+local dragToggle, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end)
+    end
+end)
+MainFrame.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragToggle then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- BYPASS AFK KICK PROTECTOR
+LocalPlayer.Idled:Connect(function()
+    if _G.AlitHubFarmActive or _G.AlitHubRestockActive or _G.AlitHubPigActive or _G.AlitHubCookActive then
+        local vu = game:GetService("VirtualUser")
+        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(0.5); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end
+end)
+-- [[ ALIT HUB VERSI REMAKE TOTAL - FIXED RESTOCK & MASAK PART 4 ]]
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        
+        -- MODE 1: AUTO FARMING JALUR SPAWNBAHAN
+        if _G.AlitHubFarmActive and #SelectedTargets > 0 and root and hum then
+            local folder = workspace:FindFirstChild("SpawnBahan")
+            if folder then
+                for _, obj in pairs(folder:GetChildren()) do
+                    if table.find(SelectedTargets, obj.Name) then
+                        local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        if prompt and prompt.Enabled and prompt.Parent then
+                            local part = prompt.Parent:IsA("BasePart") and prompt.Parent or obj:FindFirstChildWhichIsA("BasePart", true)
+                            if part and _G.AlitHubFarmActive then
+                                instantTeleportTo(root, part.CFrame); executePerfectHarvest(prompt); break 
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- MODE 2: FIXED AUTO RESTOCK (JALUR KIOSAKTIF GAK AKAN NIL LAGI)
+        if _G.AlitHubRestockActive and #SelectedRestock > 0 and root and hum then
+            local kiosAktif = workspace:FindFirstChild("KiosAktif")
+            local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
+            if myKios then
+                for i = 1, 12 do
+                    local slot = myKios:FindFirstChild("slot" .. i) or myKios:FindFirstChild("slot " .. i)
+                    if slot then
+                        local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        if prompt and prompt.Enabled then
+                            local breakRestock = false
+                            for _, toolName in ipairs(SelectedRestock) do
+                                if equipItem(toolName) then
+                                    local targetPart = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
+                                    if targetPart and _G.AlitHubRestockActive then
+                                        instantTeleportTo(root, targetPart.CFrame); executePerfectHarvest(prompt); breakRestock = true; break
+                                    end
+                                end
+                            end
+                            if breakRestock then break end
+                        end
+                    end
+                end
+            end
+        end
+
+        -- MODE 3: FIXED AUTO COOK (100% REMOTE TEMBAKAN GA JALAN LEWAT UI LAGI)
+        if _G.AlitHubCookActive and root and hum then
+            local kiosAktif = workspace:FindFirstChild("KiosAktif")
+            local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
+            if myKios then
+                local pKompor = myKios:FindFirstChild("pKompor") or myKios:FindFirstChildWhichIsA("Attachment", true)
+                if pKompor then
+                    local prompt = pKompor:FindFirstChildOfClass("ProximityPrompt") or myKios:FindFirstChildWhichIsA("ProximityPrompt", true)
+                    if prompt and prompt.Enabled then
+                        instantTeleportTo(root, pKompor.WorldCFrame); task.wait(TELEPORT_DELAY)
+                        prompt:InputHoldBegin(); task.wait(0.5); prompt:InputHoldEnd()
+                        if fireproximityprompt then fireproximityprompt(prompt) end
+                        
+                        local KiosRemote = game:GetService("ReplicatedStorage"):FindFirstChild("KiosRemote")
+                        if KiosRemote and KiosRemote:FindFirstChild("Masak") then
+                            while _G.AlitHubCookActive do
+                                task.wait(REPEAT_COOK_DELAY)
+                                KiosRemote.Masak:FireServer(_G.SelectedCookMenu, 1); task.wait(0.05)
+                                KiosRemote.Masak:FireServer(_G.SelectedCookMenu, 2); task.wait(0.05)
+                                KiosRemote.Masak:FireServer(_G.SelectedCookMenu, 3)
+                                task.wait(10) 
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        -- MODE 4: FIXED AUTO PAKAN BABI (SISTEM STRATEGI FILTER MAP USER)
+        if _G.AlitHubPigActive and root and hum then
+            local folderKandang = workspace:FindFirstChild("KandangBabi") or workspace
+            for _, kandang in pairs(folderKandang:GetChildren()) do
+                if string.find(kandang.Name, LocalPlayer.UserId) or string.find(kandang.Name, LocalPlayer.Name) then
+                    local tempatMakan = kandang:FindFirstChild("TempatMakan") or kandang:FindFirstChild("Tempat Makan")
+                    local pakanPrompt = tempatMakan and tempatMakan:FindFirstChildWhichIsA("ProximityPrompt", true)
+                    if pakanPrompt and pakanPrompt.Enabled then
+                        local textStatus = pakanPrompt.ObjectText or ""
+                        if string.find(textStatus, "0/10") or textStatus == "" then
+                            for _, foodName in ipairs(SelectedFeed) do
+                                if equipItem(foodName) then
+                                    local pmPart = tempatMakan:IsA("BasePart") and tempatMakan or tempatMakan:FindFirstChildWhichIsA("BasePart", true)
+                                    if pmPart and _G.AlitHubPigActive then
+                                        instantTeleportTo(root, pmPart.CFrame)
+                                        while pakanPrompt.Enabled and _G.AlitHubPigActive and not string.find(pakanPrompt.ObjectText, "10/10") do
+                                            pakanPrompt:InputHoldBegin(); task.wait(0.5); pakanPrompt:InputHoldEnd()
+                                            if fireproximityprompt then fireproximityprompt(pakanPrompt) end; task.wait(0.1)
+                                            if not equipItem(foodName) then break end
+                                        end
+                                    end
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    for _, babi in pairs(kandang:GetChildren()) do
+                        if string.find(string.lower(babi.Name), "babi") or babi:FindFirstChild("Fase") then
+                            local statusFase = babi:FindFirstChild("Fase") or babi:FindFirstChild("Status")
+                            if statusFase and string.find(string.lower(tostring(statusFase.Value)), "dewasa") then
+                                local panenPrompt = babi:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if panenPrompt and panenPrompt.Enabled then
+                                    local babiPart = babi:IsA("BasePart") and babi or babi:FindFirstChildWhichIsA("BasePart", true)
+                                    if babiPart and _G.AlitHubPigActive then
+                                        instantTeleportTo(root, babiPart.CFrame); executePerfectHarvest(panenPrompt); break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
