@@ -10,19 +10,17 @@ if PlayerGui:FindFirstChild("AutoCookRemakeUI") then
 end
 
 _G.AutoCookActive = false
-_G.SelectedCookMenu = "SateGagak"
+_G.SelectedCookMenu = "Sate Gagak"
 task.wait(0.1)
 
--- Daftar Kode Masakan Asli Pasar Hutan Sesuai Struktur File GitHub
+-- FIXED: Daftar Pilihan Menu Masakan Baru Sesuai Teks Asli Layar Roblox Anda
 local COOK_RECIPES = {
-    ["JamurRebus"] = "Jamur Rebus",
-    ["SateGagak"] = "Sate Gagak",
-    ["PisangRajaRebus"] = "Pisang Raja Rebus",
-    ["TumisKamboja"] = "Tumis Kamboja",
-    ["SateKepiting"] = "Sate Kepiting",
-    ["BabiGuling"] = "Babi Guling",
-    ["Kopi"] = "Kopi",
-    ["KopiKemenyan"] = "Kopi Kemenyan"
+    ["Sate Gagak"] = "Sate Gagak",
+    ["Jamur Rebus Kuburan"] = "Jamur Rebus Kuburan",
+    ["Tumis Kamboja"] = "Tumis Kamboja",
+    ["Sate Kepiting"] = "Sate Kepiting",
+    ["Pisang Raja Rebus"] = "Pisang Raja Rebus",
+    ["Kopi Kemenyan"] = "Kopi Kemenyan"
 }
 
 local INITIAL_TELEPORT_DELAY = 0.2
@@ -68,7 +66,7 @@ local UIListLayout = Instance.new("UIListLayout"); UIListLayout.Parent = ListCon
 local isMinimized = false
 MiniButton.Activated:Connect(function() 
     isMinimized = true; GLOBAL_SAVED_POS = MainFrame.Position; ContentFrame.Visible = false; MiniButton.Visible = false
-    MainFrame.Position = UDim2.new(0, 10, 0.3, 0); MainFrame.Size = UDim2.new(0, 110, 0, 45) 
+    MainFrame.Position = UDim2.new(0, 10, 0.4, 0); MainFrame.Size = UDim2.new(0, 110, 0, 45) 
 end)
 TitleButton.Activated:Connect(function() 
     if isMinimized then 
@@ -76,6 +74,7 @@ TitleButton.Activated:Connect(function()
     end 
 end)
 
+-- Menghubungkan dropdown visual dengan urutan resep baru Anda
 for codeName, dispName in pairs(COOK_RECIPES) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(40, 35, 35); btn.Text = dispName; btn.TextColor3 = Color3.fromRGB(220, 220, 220); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function() 
@@ -86,7 +85,7 @@ for codeName, dispName in pairs(COOK_RECIPES) do
     end)
 end
 
-ListContainer.CanvasSize = UDim2.new(0, 0, 0, 185)
+ListContainer.CanvasSize = UDim2.new(0, 0, 0, 140) -- Kunci tinggi scroll dropdown agar rapi
 DropdownButton.Activated:Connect(function() 
     ListContainer.Visible = not ListContainer.Visible
     MainFrame.Size = ListContainer.Visible and UDim2.new(0, 220, 0, 250) or UDim2.new(0, 220, 0, 180)
@@ -138,6 +137,28 @@ local function initializeKitchen()
     return false
 end
 
+-- FIXED: Fungsi Baru Pencarian Berantai untuk Mengetuk Tombol "Masak" yang Berada di Baris Resep yang Tepat
+local function clickVirtualCookingButton(gui, targetMenuName)
+    if not gui then return false end
+    
+    -- Mencari semua objek teks (judul resep masakan) yang ada di dalam GUI game
+    for _, textObj in pairs(gui:GetDescendants()) do
+        if textObj:IsA("TextLabel") and string.find(string.lower(textObj.Text), string.lower(targetMenuName)) then
+            -- Begitu baris nama masakan ketemu, skrip mencari tombol hijau "Masak" yang berada dalam satu kotak baris tersebut
+            local parentContainer = textObj.Parent
+            if parentContainer then
+                -- Mencari tombol di dalam kotak kontainer baris resep masakan tersebut
+                local actionBtn = parentContainer:FindFirstChild("Masak", true) or parentContainer:FindFirstChildWhichIsA("TextButton", true)
+                if actionBtn and actionBtn:IsA("TextButton") and actionBtn.Activated then
+                    actionBtn.Activated:Fire() -- Mengetuk tombol virtual "Masak" milik resep pilihan Anda secara akurat
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 -- SYSTEM DRAGGABLE MANUAL UI MURNI LUAU
 local dragToggle, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input)
@@ -154,35 +175,28 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
     end
 end)
 
--- INTEGRASI BACKEND REMOTE ENGINE BERDASARKAN SOURCE CODE GITHUB USER
+-- BACKEND ENGINE UTUH RE-ALUR MANDIRI ANDA
 task.spawn(function()
     while true do
         task.wait(1)
         if _G.AutoCookActive then
-            -- 1. Jalankan inisialisasi verifikasi jarak legal ke server (1x Teleport Awal)
             local initSuccess = initializeKitchen()
             if initSuccess then
-                -- 2. Mengambil alih proses tembakan RemoteEvent dapur dari file GitHub Anda
                 while _G.AutoCookActive do
                     task.wait(REPEAT_LOOP_DELAY)
-                    
-                    -- Pengecekan sisa GUI Memasak game Pasar Hutan
                     local cookingGui = PlayerGui:FindFirstChild("MemasakGui") or PlayerGui:FindFirstChildWhichIsA("ScreenGui", true)
                     if cookingGui and cookingGui.Enabled and _G.AutoCookActive then
-                        
-                        -- Menggunakan pemanggilan Remote bawaan dari link GitHub Anda secara teratur (Maksimal 3 antrean)
-                        -- Catatan: Fungsi ini mengeksekusi RemoteEvent di latar belakang secara instan
-                        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("CookRemote") or game:GetService("ReplicatedStorage"):FindFirstChildWhichIsA("RemoteEvent", true)
-                        if remote then
-                            -- Menembak 3 pesanan masakan sekaligus ke server secara legal sesuai pilihan menu Anda
-                            for i = 1, 3 do
-                                if not _G.AutoCookActive then break end
-                                remote:FireServer(_G.SelectedCookMenu) 
-                                task.wait(0.05)
+                        local fillCount = 0
+                        -- Mengisi maksimal 3 antrean berturut-turut pada baris resep masakan Anda
+                        for i = 1, 3 do
+                            if clickVirtualCookingButton(cookingGui, _G.SelectedCookMenu) then
+                                fillCount = fillCount + 1
+                                task.wait(0.1) -- Jeda mikro antar pengisian slot
                             end
-                            
-                            -- Jeda masa tunggu durasi pematangan di dalam game Pasar Hutan (10 detik)
-                            task.wait(10)
+                        end
+                        if fillCount > 0 then
+                            -- Skrip mendeteksi tombol penyelesaian otomatis game (otomatis terkunci 10 detik masa tunggu pamatangan)
+                            task.wait(10) 
                         end
                     end
                 end
