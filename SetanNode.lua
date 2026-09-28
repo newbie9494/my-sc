@@ -24,7 +24,7 @@ local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 -- PENYESUAIAN DELAY ANTI-CHEAT SESUAI PERMINTAAN USER
 local BLINK_SPEED = 250
 local POST_PANEN_DELAY = 0.7
-local TELEPORT_DELAY = 0.6
+local TELEPORT_DELAY = 0.2
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
