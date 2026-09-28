@@ -22,9 +22,9 @@ local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 
 -- PENYESUAIAN DELAY ANTI-CHEAT SESUAI PERMINTAAN USER
-local BLINK_SPEED = 250
+local BLINK_SPEED = 150
 local POST_PANEN_DELAY = 1.5
-local TELEPORT_DELAY = 0.2
+local TELEPORT_DELAY = 0.5
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
