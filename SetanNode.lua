@@ -16,18 +16,37 @@ local TARGET_MAPPING = {
     ["Jamur Kuburan"] = "Spawn_JamurKuburan", ["Kemenyan"] = "Spawn_Kemenyan",
     ["Kepiting Sungai"] = "Spawn_KepitingSungai", ["Melati"] = "Spawn_Melati"
 }
-local RESTOCK_MAPPING = { ["Kepiting"] = "Kepiting", ["Sate Kepiting"] = "Sate Kepiting" }
+
+local RESTOCK_MAPPING = {
+    ["Kopi Kemenyan"] = "KopiKemenyan",
+    ["Pisang Raja Rebus"] = "PisangRajaRebus",
+    ["Sate Gagak"] = "SateGagak",
+    ["Kepiting Sungai"] = "KepitingSungai",
+    ["Tumis Kamboja"] = "TumisKamboja",
+    ["Babi Guling"] = "BabiGuling",
+    ["Dupa"] = "Dupa",
+    ["Apel"] = "Apel",
+    ["Jamur"] = "Jamur",
+    ["Melati"] = "Melati",
+    ["Cabai"] = "Cabai",
+    ["Telur"] = "Telur",
+    ["Terong"] = "Terong",
+    ["aKubis"] = "aKubis",
+    ["Kentang"] = "Kentang",
+    ["Paprika"] = "Paprika",
+    ["Jagung"] = "Jagung",
+    ["Ayam Potong"] = "AyamPotong",
+    ["Susu"] = "Susu",
+    ["Jeruk"] = "Jeruk"
+}
+
 local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "PisangRajaRebus" }
 
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
--- ====================================================================
--- SETTINGAN DELAY MANDIRI (SEKARANG BERFUNGSI TIAP SELESAI 1 TARGET)
--- ====================================================================
-local TELEPORT_DELAY = 0.2      -- Jeda diam sejenak SETELAH TELEPORT INSTAN di target baru
-local MASA_TUNGGU = 3.0         -- Jeda masa tunggu diam di tempat SETELAH BERHASIL MEMANEN 1 TARGET
--- ====================================================================
+local TELEPORT_DELAY = 0.2      
+local MASA_TUNGGU = 5.0         
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
@@ -79,8 +98,9 @@ DropdownButton2.Name = "DropdownButton2"; DropdownButton2.Parent = ContentFrame;
 DropdownButton2.Font = Enum.Font.GothamSemibold; DropdownButton2.Text = "TARGET RESTOCK ▼"; DropdownButton2.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton2.TextSize = 10
 Instance.new("UICorner", DropdownButton2).CornerRadius = UDim.new(0, 5)
 
+-- FIXED: Membatasi tinggi kontainer restock agar ringkas (60px) dan mengaktifkan scroll anti-meluap
 local ListContainer2 = Instance.new("ScrollingFrame")
-ListContainer2.Name = "ListContainer2"; ListContainer2.Parent = ContentFrame; ListContainer2.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer2.Position = UDim2.new(0.05, 0, 0.48, 0); ListContainer2.Size = UDim2.new(0.9, 0, 0, 45); ListContainer2.BorderSizePixel = 0; ListContainer2.ScrollBarThickness = 3; ListContainer2.Visible = false
+ListContainer2.Name = "ListContainer2"; ListContainer2.Parent = ContentFrame; ListContainer2.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer2.Position = UDim2.new(0.05, 0, 0.48, 0); ListContainer2.Size = UDim2.new(0.9, 0, 0, 60); ListContainer2.BorderSizePixel = 0; ListContainer2.ScrollBarThickness = 3; ListContainer2.Visible = false
 Instance.new("UICorner", ListContainer2).CornerRadius = UDim.new(0, 5)
 local UIListLayout2 = Instance.new("UIListLayout"); UIListLayout2.Parent = ListContainer2; UIListLayout2.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout2.Padding = UDim.new(0, 2)
 
@@ -101,16 +121,22 @@ for disp, ws in pairs(TARGET_MAPPING) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function() local idx = table.find(SelectedTargets, ws) if idx then table.remove(SelectedTargets, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedTargets, ws); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
 end
+
 for disp, tool in pairs(RESTOCK_MAPPING) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer2; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function() local idx = table.find(SelectedRestock, tool) if idx then table.remove(SelectedRestock, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedRestock, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
 end
+
 for disp, tool in pairs(FEED_MAPPING) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer3; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function() local idx = table.find(SelectedFeed, tool) if idx then table.remove(SelectedFeed, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedFeed, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
 end
 
-ListContainer.CanvasSize = UDim2.new(0, 0, 0, 160); ListContainer2.CanvasSize = UDim2.new(0, 0, 0, 60); ListContainer3.CanvasSize = UDim2.new(0, 0, 0, 60)
+-- FIXED: Mengunci tinggi area gulir internal (450px) agar muat di dalam frame kecil 60px
+ListContainer.CanvasSize = UDim2.new(0, 0, 0, 160)
+ListContainer2.CanvasSize = UDim2.new(0, 0, 0, 450) 
+ListContainer3.CanvasSize = UDim2.new(0, 0, 0, 60)
+
 DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "TARGET FARM ▲" or "TARGET FARM ▼" end)
 DropdownButton2.Activated:Connect(function() ListContainer2.Visible = not ListContainer2.Visible; DropdownButton2.Text = ListContainer2.Visible and "TARGET RESTOCK ▲" or "TARGET RESTOCK ▼" end)
 DropdownButton3.Activated:Connect(function() ListContainer3.Visible = not ListContainer3.Visible; DropdownButton3.Text = ListContainer3.Visible and "TARGET PAKAN PIG ▲" or "TARGET PAKAN PIG ▼" end)
@@ -149,17 +175,14 @@ end
 local function executePerfectHarvest(prompt)
     if not prompt or not prompt.Enabled then return end
     
-    -- Jeda diam sejenak SETELAH SAMPAI di target baru (0.2 detik)
     task.wait(TELEPORT_DELAY)
     
-    -- Menekan tombol E / panen selama 0.5 detik murni syarat game
     prompt:InputHoldBegin()
     task.wait(0.5) 
     prompt:InputHoldEnd()
     
     if fireproximityprompt then fireproximityprompt(prompt) end
     
-    -- Jeda MASA_TUNGGU mandiri di tempat setelah panen berhasil (Contoh: 5 detik)
     task.wait(MASA_TUNGGU)
 end
 
@@ -194,7 +217,6 @@ task.spawn(function()
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         
-        -- MODE FARMING: Memaksa kuncian jeda terisolasi penuh di setiap 1 butir target
         if _G.AlitHubFarmActive and #SelectedTargets > 0 and root and hum then
             local folder = workspace:FindFirstChild("SpawnBahan")
             if folder then
@@ -206,7 +228,7 @@ task.spawn(function()
                             if part and _G.AlitHubFarmActive then
                                 instantTeleportTo(root, part.CFrame)
                                 executePerfectHarvest(prompt)
-                                break -- FIXED: Memutus antrean loop untuk mengaktifkan MASA_TUNGGU di setiap 1 target
+                                break 
                             end
                         end
                     end
@@ -234,7 +256,7 @@ task.spawn(function()
                                     end
                                 end
                             end
-                            if breakLoop then break end -- FIXED: Jeda mandiri setiap selesai 1 slot kios
+                            if breakLoop then break end 
                         end
                     end
                 end
@@ -282,7 +304,7 @@ task.spawn(function()
                                     if babiPart and _G.AlitHubPigActive then
                                         instantTeleportTo(root, babiPart.CFrame)
                                         executePerfectHarvest(panenPrompt)
-                                        break -- FIXED: Jeda mandiri setiap selesai memanen 1 ekor babi dewasa
+                                        break 
                                     end
                                 end
                             end
