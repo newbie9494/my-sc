@@ -26,7 +26,7 @@ local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 -- SETTINGAN DELAY MANDIRI (SEKARANG BERFUNGSI TIAP SELESAI 1 TARGET)
 -- ====================================================================
 local TELEPORT_DELAY = 0.2      -- Jeda diam sejenak SETELAH TELEPORT INSTAN di target baru
-local MASA_TUNGGU = 5.0         -- Jeda masa tunggu diam di tempat SETELAH BERHASIL MEMANEN 1 TARGET
+local MASA_TUNGGU = 3.0         -- Jeda masa tunggu diam di tempat SETELAH BERHASIL MEMANEN 1 TARGET
 -- ====================================================================
 
 local ScreenGui = Instance.new("ScreenGui")
