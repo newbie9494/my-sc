@@ -23,7 +23,7 @@ local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 
 -- PENYESUAIAN DELAY ANTI-CHEAT SESUAI PERMINTAAN USER
 local BLINK_SPEED = 250
-local POST_PANEN_DELAY = 0.7
+local POST_PANEN_DELAY = 1.5
 local TELEPORT_DELAY = 0.2
 
 local ScreenGui = Instance.new("ScreenGui")
