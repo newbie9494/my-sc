@@ -22,10 +22,8 @@ local TARGET_MAPPING = {
 local RESTOCK_MAPPING = { ["Kepiting"] = "Kepiting", ["Sate Kepiting"] = "Sate Kepiting" }
 local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "PisangRajaRebus" }
 
-local SelectedTargets = {}
-local SelectedRestock = {}
-local SelectedFeed = {}
-
+-- FIXED: Inisialisasi tabel tunggal terpadu untuk mencegah putus referensi data
+local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
 -- KONFIGURASI DELAY AMAN DARI USER
@@ -265,7 +263,6 @@ DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListCont
 DropdownButton2.Activated:Connect(function() ListContainer2.Visible = not ListContainer2.Visible; DropdownButton2.Text = ListContainer2.Visible and "TARGET RESTOCK ▲" or "TARGET RESTOCK ▼" end)
 DropdownButton3.Activated:Connect(function() ListContainer3.Visible = not ListContainer3.Visible; DropdownButton3.Text = ListContainer3.Visible and "TARGET PAKAN PIG ▲" or "TARGET PAKAN PIG ▼" end)
 
--- FIXED: Logika Tombol Toggle murni menggunakan If-Statement terpisah (Anti-Macet & Anti-Crash)
 ToggleButton.Activated:Connect(function() 
     if _G.AlitHubFarmActive == true then
         _G.AlitHubFarmActive = false
@@ -325,7 +322,6 @@ local function blinkTravelTo(root, humanoid, targetCFrame)
     end
 end
 
--- HYBRID TRIGGER PANEN: bypass pemicu internal executor + kuncian tahanan jari 0.6 detik murni
 local function secureHoldPrompt(prompt)
     if not prompt or not prompt.Enabled then return end
     if fireproximityprompt then fireproximityprompt(prompt) end
