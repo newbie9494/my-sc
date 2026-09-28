@@ -22,78 +22,185 @@ local TARGET_MAPPING = {
 local RESTOCK_MAPPING = { ["Kepiting"] = "Kepiting", ["Sate Kepiting"] = "Sate Kepiting" }
 local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "PisangRajaRebus" }
 
-local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
+local SelectedTargets = {}
+local SelectedRestock = {}
+local SelectedFeed = {}
+
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
--- KONFIGURASI WAKTU SESUAI REKOMENDASI USER
+-- KONFIGURASI DELAY AMAN DARI USER
 local BLINK_SPEED = 250
 local POST_PANEN_DELAY = 0.7
 local TELEPORT_DELAY = 0.6
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "AlitHubUI"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 220, 0, 420); MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true; MainFrame.Active = true
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.Position = GLOBAL_SAVED_POS
+MainFrame.Size = UDim2.new(0, 220, 0, 420)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Active = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
-local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 45)
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Parent = MainFrame
+TopBar.BackgroundTransparency = 1
+TopBar.Size = UDim2.new(1, 0, 0, 45)
+
 local TitleButton = Instance.new("TextButton")
-TitleButton.Name = "TitleButton"; TitleButton.Parent = TopBar; TitleButton.BackgroundTransparency = 1; TitleButton.Position = UDim2.new(0, 15, 0, 0); TitleButton.Size = UDim2.new(0, 120, 0, 45)
-TitleButton.Font = Enum.Font.GothamBold; TitleButton.Text = "ALIT HUB"; TitleButton.TextColor3 = Color3.fromRGB(255, 215, 0); TitleButton.TextSize = 14; TitleButton.TextXAlignment = Enum.TextXAlignment.Left
+TitleButton.Name = "TitleButton"
+TitleButton.Parent = TopBar
+TitleButton.BackgroundTransparency = 1
+TitleButton.Position = UDim2.new(0, 15, 0, 0)
+TitleButton.Size = UDim2.new(0, 120, 0, 45)
+TitleButton.Font = Enum.Font.GothamBold
+TitleButton.Text = "ALIT HUB"
+TitleButton.TextColor3 = Color3.fromRGB(255, 215, 0)
+TitleButton.TextSize = 14
+TitleButton.TextXAlignment = Enum.TextXAlignment.Left
 
 local MiniButton = Instance.new("TextButton")
-MiniButton.Name = "MiniButton"; MiniButton.Parent = TopBar; MiniButton.BackgroundTransparency = 1; MiniButton.Position = UDim2.new(1, -35, 0, 0); MiniButton.Size = UDim2.new(0, 30, 0, 45)
-MiniButton.Font = Enum.Font.GothamBold; MiniButton.Text = "-"; MiniButton.TextColor3 = Color3.fromRGB(200, 200, 200); MiniButton.TextSize = 20
+MiniButton.Name = "MiniButton"
+MiniButton.Parent = TopBar
+MiniButton.BackgroundTransparency = 1
+MiniButton.Position = UDim2.new(1, -35, 0, 0)
+MiniButton.Size = UDim2.new(0, 30, 0, 45)
+MiniButton.Font = Enum.Font.GothamBold
+MiniButton.Text = "-"
+MiniButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+MiniButton.TextSize = 20
 
 local ContentFrame = Instance.new("Frame")
-ContentFrame.Name = "ContentFrame"; ContentFrame.Parent = MainFrame; ContentFrame.BackgroundTransparency = 1; ContentFrame.Position = UDim2.new(0, 0, 0, 45); ContentFrame.Size = UDim2.new(1, 0, 1, -45)
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 0, 0, 45)
+ContentFrame.Size = UDim2.new(1, 0, 1, -45)
 
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "ToggleButton"; ToggleButton.Parent = ContentFrame; ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.Position = UDim2.new(0.04, 0, 0.02, 0); ToggleButton.Size = UDim2.new(0.29, 0, 0, 32)
-ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM"; ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255); ToggleButton.TextSize = 10
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Parent = ContentFrame
+ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+ToggleButton.Position = UDim2.new(0.04, 0, 0.02, 0)
+ToggleButton.Size = UDim2.new(0.29, 0, 0, 32)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Text = "FARM: OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 9
 Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 5)
 
 local RestockButton = Instance.new("TextButton")
-RestockButton.Name = "RestockButton"; RestockButton.Parent = ContentFrame; RestockButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); RestockButton.Position = UDim2.new(0.36, 0, 0.02, 0); RestockButton.Size = UDim2.new(0.29, 0, 0, 32)
-RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "STOCK"; RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255); RestockButton.TextSize = 10
+RestockButton.Name = "RestockButton"
+RestockButton.Parent = ContentFrame
+RestockButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+RestockButton.Position = UDim2.new(0.36, 0, 0.02, 0)
+RestockButton.Size = UDim2.new(0.29, 0, 0, 32)
+RestockButton.Font = Enum.Font.GothamBold
+RestockButton.Text = "STOCK: OFF"
+RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+RestockButton.TextSize = 9
 Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 5)
 
 local PigButton = Instance.new("TextButton")
-PigButton.Name = "PigButton"; PigButton.Parent = ContentFrame; PigButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); PigButton.Position = UDim2.new(0.68, 0, 0.02, 0); PigButton.Size = UDim2.new(0.29, 0, 0, 32)
-PigButton.Font = Enum.Font.GothamBold; PigButton.Text = "PIG"; PigButton.TextColor3 = Color3.fromRGB(255, 255, 255); PigButton.TextSize = 10
+PigButton.Name = "PigButton"
+PigButton.Parent = ContentFrame
+PigButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+PigButton.Position = UDim2.new(0.68, 0, 0.02, 0)
+PigButton.Size = UDim2.new(0.29, 0, 0, 32)
+PigButton.Font = Enum.Font.GothamBold
+PigButton.Text = "PIG: OFF"
+PigButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+PigButton.TextSize = 9
 Instance.new("UICorner", PigButton).CornerRadius = UDim.new(0, 5)
 -- [[ ALIT HUB - TELEPORT INSTAN + RESTOCK & PIG FARM PART 2 ]]
 local DropdownButton = Instance.new("TextButton")
-DropdownButton.Name = "DropdownButton"; DropdownButton.Parent = ContentFrame; DropdownButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton.Position = UDim2.new(0.05, 0, 0.12, 0); DropdownButton.Size = UDim2.new(0.9, 0, 0, 28)
-DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "TARGET FARM ▼"; DropdownButton.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton.TextSize = 10
+DropdownButton.Name = "DropdownButton"
+DropdownButton.Parent = ContentFrame
+DropdownButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+DropdownButton.Position = UDim2.new(0.05, 0, 0.12, 0)
+DropdownButton.Size = UDim2.new(0.9, 0, 0, 28)
+DropdownButton.Font = Enum.Font.GothamSemibold
+DropdownButton.Text = "TARGET FARM ▼"
+DropdownButton.TextColor3 = Color3.fromRGB(240, 240, 240)
+DropdownButton.TextSize = 10
 Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 5)
 
 local ListContainer = Instance.new("ScrollingFrame")
-ListContainer.Name = "ListContainer"; ListContainer.Parent = ContentFrame; ListContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer.Position = UDim2.new(0.05, 0, 0.20, 0); ListContainer.Size = UDim2.new(0.9, 0, 0, 60); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 3; ListContainer.Visible = false
+ListContainer.Name = "ListContainer"
+ListContainer.Parent = ContentFrame
+ListContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+ListContainer.Position = UDim2.new(0.05, 0, 0.20, 0)
+ListContainer.Size = UDim2.new(0.9, 0, 0, 60)
+ListContainer.BorderSizePixel = 0
+ListContainer.ScrollBarThickness = 3
+ListContainer.Visible = false
 Instance.new("UICorner", ListContainer).CornerRadius = UDim.new(0, 5)
-local UIListLayout = Instance.new("UIListLayout"); UIListLayout.Parent = ListContainer; UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout.Padding = UDim.new(0, 2)
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ListContainer
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 2)
 
 local DropdownButton2 = Instance.new("TextButton")
-DropdownButton2.Name = "DropdownButton2"; DropdownButton2.Parent = ContentFrame; DropdownButton2.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton2.Position = UDim2.new(0.05, 0, 0.40, 0); DropdownButton2.Size = UDim2.new(0.9, 0, 0, 28)
-DropdownButton2.Font = Enum.Font.GothamSemibold; DropdownButton2.Text = "TARGET RESTOCK ▼"; DropdownButton2.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton2.TextSize = 10
+DropdownButton2.Name = "DropdownButton2"
+DropdownButton2.Parent = ContentFrame
+DropdownButton2.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+DropdownButton2.Position = UDim2.new(0.05, 0, 0.40, 0)
+DropdownButton2.Size = UDim2.new(0.9, 0, 0, 28)
+DropdownButton2.Font = Enum.Font.GothamSemibold
+DropdownButton2.Text = "TARGET RESTOCK ▼"
+DropdownButton2.TextColor3 = Color3.fromRGB(240, 240, 240)
+DropdownButton2.TextSize = 10
 Instance.new("UICorner", DropdownButton2).CornerRadius = UDim.new(0, 5)
 
 local ListContainer2 = Instance.new("ScrollingFrame")
-ListContainer2.Name = "ListContainer2"; ListContainer2.Parent = ContentFrame; ListContainer2.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer2.Position = UDim2.new(0.05, 0, 0.48, 0); ListContainer2.Size = UDim2.new(0.9, 0, 0, 45); ListContainer2.BorderSizePixel = 0; ListContainer2.ScrollBarThickness = 3; ListContainer2.Visible = false
+ListContainer2.Name = "ListContainer2"
+ListContainer2.Parent = ContentFrame
+ListContainer2.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+ListContainer2.Position = UDim2.new(0.05, 0, 0.48, 0)
+ListContainer2.Size = UDim2.new(0.9, 0, 0, 45)
+ListContainer2.BorderSizePixel = 0
+ListContainer2.ScrollBarThickness = 3
+ListContainer2.Visible = false
 Instance.new("UICorner", ListContainer2).CornerRadius = UDim.new(0, 5)
-local UIListLayout2 = Instance.new("UIListLayout"); UIListLayout2.Parent = ListContainer2; UIListLayout2.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout2.Padding = UDim.new(0, 2)
+local UIListLayout2 = Instance.new("UIListLayout")
+UIListLayout2.Parent = ListContainer2
+UIListLayout2.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout2.Padding = UDim.new(0, 2)
 
 local DropdownButton3 = Instance.new("TextButton")
-DropdownButton3.Name = "DropdownButton3"; DropdownButton3.Parent = ContentFrame; DropdownButton3.BackgroundColor3 = Color3.fromRGB(45, 45, 50); DropdownButton3.Position = UDim2.new(0.05, 0, 0.68, 0); DropdownButton3.Size = UDim2.new(0.9, 0, 0, 28)
-DropdownButton3.Font = Enum.Font.GothamSemibold; DropdownButton3.Text = "TARGET PAKAN PIG ▼"; DropdownButton3.TextColor3 = Color3.fromRGB(240, 240, 240); DropdownButton3.TextSize = 10
+DropdownButton3.Name = "DropdownButton3"
+DropdownButton3.Parent = ContentFrame
+DropdownButton3.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+DropdownButton3.Position = UDim2.new(0.05, 0, 0.68, 0)
+DropdownButton3.Size = UDim2.new(0.9, 0, 0, 28)
+DropdownButton3.Font = Enum.Font.GothamSemibold
+DropdownButton3.Text = "TARGET PAKAN PIG ▼"
+DropdownButton3.TextColor3 = Color3.fromRGB(240, 240, 240)
+DropdownButton3.TextSize = 10
 Instance.new("UICorner", DropdownButton3).CornerRadius = UDim.new(0, 5)
 
 local ListContainer3 = Instance.new("ScrollingFrame")
-ListContainer3.Name = "ListContainer3"; ListContainer3.Parent = ContentFrame; ListContainer3.BackgroundColor3 = Color3.fromRGB(20, 20, 25); ListContainer3.Position = UDim2.new(0.05, 0, 0.76, 0); ListContainer3.Size = UDim2.new(0.9, 0, 0, 45); ListContainer3.BorderSizePixel = 0; ListContainer3.ScrollBarThickness = 3; ListContainer3.Visible = false
+ListContainer3.Name = "ListContainer3"
+ListContainer3.Parent = ContentFrame
+ListContainer3.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+ListContainer3.Position = UDim2.new(0.05, 0, 0.76, 0)
+ListContainer3.Size = UDim2.new(0.9, 0, 0, 45)
+ListContainer3.BorderSizePixel = 0
+ListContainer3.ScrollBarThickness = 3
+ListContainer3.Visible = false
 Instance.new("UICorner", ListContainer3).CornerRadius = UDim.new(0, 5)
-local UIListLayout3 = Instance.new("UIListLayout"); UIListLayout3.Parent = ListContainer3; UIListLayout3.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout3.Padding = UDim.new(0, 2)
+local UIListLayout3 = Instance.new("UIListLayout")
+UIListLayout3.Parent = ListContainer3
+UIListLayout3.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout3.Padding = UDim.new(0, 2)
 
 MiniButton.Activated:Connect(function() 
     ContentFrame.Visible = false 
@@ -112,22 +219,88 @@ TitleButton.Activated:Connect(function()
 end)
 
 for disp, ws in pairs(TARGET_MAPPING) do
-    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    btn.Activated:Connect(function() local idx = table.find(SelectedTargets, ws) if idx then table.remove(SelectedTargets, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedTargets, ws); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
-end
-for disp, tool in pairs(RESTOCK_MAPPING) do
-    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer2; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    btn.Activated:Connect(function() local idx = table.find(SelectedRestock, tool) if idx then table.remove(SelectedRestock, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedRestock, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
-end
-for disp, tool in pairs(FEED_MAPPING) do
-    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer3; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    btn.Activated:Connect(function() local idx = table.find(SelectedFeed, tool) if idx then table.remove(SelectedFeed, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) else table.insert(SelectedFeed, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) end end)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() 
+        local idx = table.find(SelectedTargets, ws) 
+        if idx then 
+            table.remove(SelectedTargets, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) 
+        else 
+            table.insert(SelectedTargets, ws); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) 
+        end 
+    end)
 end
 
-ListContainer.CanvasSize = UDim2.new(0, 0, 0, 160); ListContainer2.CanvasSize = UDim2.new(0, 0, 0, 60); ListContainer3.CanvasSize = UDim2.new(0, 0, 0, 60)
+for disp, tool in pairs(RESTOCK_MAPPING) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer2; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() 
+        local idx = table.find(SelectedRestock, tool) 
+        if idx then 
+            table.remove(SelectedRestock, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) 
+        else 
+            table.insert(SelectedRestock, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) 
+        end 
+    end)
+end
+
+for disp, tool in pairs(FEED_MAPPING) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer3; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() 
+        local idx = table.find(SelectedFeed, tool) 
+        if idx then 
+            table.remove(SelectedFeed, idx); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40) 
+        else 
+            table.insert(SelectedFeed, tool); btn.BackgroundColor3 = Color3.fromRGB(40, 167, 69) 
+        end 
+    end)
+end
+
+ListContainer.CanvasSize = UDim2.new(0, 0, 0, 160)
+ListContainer2.CanvasSize = UDim2.new(0, 0, 0, 60)
+ListContainer3.CanvasSize = UDim2.new(0, 0, 0, 60)
+
 DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "TARGET FARM ▲" or "TARGET FARM ▼" end)
 DropdownButton2.Activated:Connect(function() ListContainer2.Visible = not ListContainer2.Visible; DropdownButton2.Text = ListContainer2.Visible and "TARGET RESTOCK ▲" or "TARGET RESTOCK ▼" end)
 DropdownButton3.Activated:Connect(function() ListContainer3.Visible = not ListContainer3.Visible; DropdownButton3.Text = ListContainer3.Visible and "TARGET PAKAN PIG ▲" or "TARGET PAKAN PIG ▼" end)
+
+-- FIXED: Logika Tombol Toggle murni menggunakan If-Statement terpisah (Anti-Macet & Anti-Crash)
+ToggleButton.Activated:Connect(function() 
+    if _G.AlitHubFarmActive == true then
+        _G.AlitHubFarmActive = false
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+        ToggleButton.Text = "FARM: OFF"
+    else
+        _G.AlitHubFarmActive = true
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+        ToggleButton.Text = "FARM: ON"
+    end
+end)
+
+RestockButton.Activated:Connect(function() 
+    if _G.AlitHubRestockActive == true then
+        _G.AlitHubRestockActive = false
+        RestockButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+        RestockButton.Text = "STOCK: OFF"
+    else
+        _G.AlitHubRestockActive = true
+        RestockButton.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+        RestockButton.Text = "STOCK: ON"
+    end
+end)
+
+PigButton.Activated:Connect(function() 
+    if _G.AlitHubPigActive == true then
+        _G.AlitHubPigActive = false
+        PigButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+        PigButton.Text = "PIG: OFF"
+    else
+        _G.AlitHubPigActive = true
+        PigButton.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+        PigButton.Text = "PIG: ON"
+    end
+end)
 -- [[ ALIT HUB - TELEPORT INSTAN + RESTOCK & PIG FARM PART 3 ]]
 local function equipItem(itemName)
     local bp = LocalPlayer:FindFirstChild("Backpack")
@@ -152,13 +325,11 @@ local function blinkTravelTo(root, humanoid, targetCFrame)
     end
 end
 
--- HYBRID ACTION: Mengaktifkan ProximityPrompt lalu dipaksa menahan input jari selama 0.6 detik murni
+-- HYBRID TRIGGER PANEN: bypass pemicu internal executor + kuncian tahanan jari 0.6 detik murni
 local function secureHoldPrompt(prompt)
     if not prompt or not prompt.Enabled then return end
-    -- Langkah 1: Aktifkan trigger bypass internal executor Delta
     if fireproximityprompt then fireproximityprompt(prompt) end
     task.wait(0.02)
-    -- Langkah 2: Kunci penekanan fisik terikat mesin agar server mendeteksi hold time > 0.5 detik
     prompt:InputHoldBegin()
     task.wait(0.6) 
     prompt:InputHoldEnd()
