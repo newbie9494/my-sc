@@ -25,7 +25,7 @@ local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 -- ====================================================================
 -- SETTINGAN DELAY MANDIRI (MURNI TERISOLASI SESUAI PERMINTAAN ANDA)
 -- ====================================================================
-local BLINK_SPEED = 250         -- Kecepatan gerak karakter saat menuju target
+local BLINK_SPEED = 50         -- Kecepatan gerak karakter saat menuju target
 local TELEPORT_DELAY = 0.2      -- Jeda diam sejenak SETELAH SAMPAI di target baru
 local MASA_TUNGGU = 1.5         -- Jeda masa tunggu diam di tempat SETELAH TARGET PANEN SELESAI
 -- ====================================================================
