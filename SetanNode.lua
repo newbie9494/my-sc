@@ -22,9 +22,12 @@ local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
--- SETTINGAN DELAY MANDIRI YANG SUDAH PAS SESUAI LOGIKA ANDA
+-- ====================================================================
+-- SETTINGAN DELAY MANDIRI (SEKARANG BERFUNGSI TIAP SELESAI 1 TARGET)
+-- ====================================================================
 local TELEPORT_DELAY = 0.2      -- Jeda diam sejenak SETELAH TELEPORT INSTAN di target baru
-local MASA_TUNGGU = 5         -- Jeda masa tunggu diam di tempat SETELAH TARGET PANEN SELESAI
+local MASA_TUNGGU = 5.0         -- Jeda masa tunggu diam di tempat SETELAH BERHASIL MEMANEN 1 TARGET
+-- ====================================================================
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
@@ -53,12 +56,12 @@ Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 5)
 
 local RestockButton = Instance.new("TextButton")
 RestockButton.Name = "RestockButton"; RestockButton.Parent = ContentFrame; RestockButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); RestockButton.Position = UDim2.new(0.36, 0, 0.02, 0); RestockButton.Size = UDim2.new(0.29, 0, 0, 32)
-RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "STOCK: OFF"; RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "STOCK: OFF"; RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255); RestockButton.TextSize = 9
 Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 5)
 
 local PigButton = Instance.new("TextButton")
 PigButton.Name = "PigButton"; PigButton.Parent = ContentFrame; PigButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); PigButton.Position = UDim2.new(0.68, 0, 0.02, 0); PigButton.Size = UDim2.new(0.29, 0, 0, 32)
-PigButton.Font = Enum.Font.GothamBold; PigButton.Text = "PIG: OFF"; PigButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+PigButton.Font = Enum.Font.GothamBold; PigButton.Text = "PIG: OFF"; PigButton.TextColor3 = Color3.fromRGB(255, 255, 255); PigButton.TextSize = 9
 Instance.new("UICorner", PigButton).CornerRadius = UDim.new(0, 5)
 -- [[ ALIT HUB - TELEPORT INSTAN + RESTOCK & PIG FARM PART 2 ]]
 local DropdownButton = Instance.new("TextButton")
@@ -135,30 +138,28 @@ local function equipItem(itemName)
     return char and char:FindFirstChild(itemName) ~= nil
 end
 
--- FIXED: Mengubah Metode Gerak Meluncur (Tween) Menjadi Teleportasi Koordinat Instan (1 Frame)
 local function instantTeleportTo(root, targetCFrame)
     if root then
         root.Velocity = Vector3.new(0, 0, 0)
-        root.CFrame = targetCFrame  -- Mengubah posisi koordinat seketika tanpa proses meluncur udara
+        root.CFrame = targetCFrame  
         root.Velocity = Vector3.new(0, 0, 0)
     end
 end
 
--- LOGIKA ISOLASI WAKTU UTUH MANDIRI SINKRONISASI USER
 local function executePerfectHarvest(prompt)
     if not prompt or not prompt.Enabled then return end
     
     -- Jeda diam sejenak SETELAH SAMPAI di target baru (0.2 detik)
     task.wait(TELEPORT_DELAY)
     
-    -- Menekan tombol E / panen selama 0.5 detik murni
+    -- Menekan tombol E / panen selama 0.5 detik murni syarat game
     prompt:InputHoldBegin()
     task.wait(0.5) 
     prompt:InputHoldEnd()
     
     if fireproximityprompt then fireproximityprompt(prompt) end
     
-    -- Jeda masa tunggu diam di tempat SETELAH TARGET PANEN SELESAI (1.5 detik)
+    -- Jeda MASA_TUNGGU mandiri di tempat setelah panen berhasil (Contoh: 5 detik)
     task.wait(MASA_TUNGGU)
 end
 
@@ -193,6 +194,7 @@ task.spawn(function()
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         
+        -- MODE FARMING: Memaksa kuncian jeda terisolasi penuh di setiap 1 butir target
         if _G.AlitHubFarmActive and #SelectedTargets > 0 and root and hum then
             local folder = workspace:FindFirstChild("SpawnBahan")
             if folder then
@@ -202,9 +204,9 @@ task.spawn(function()
                         if prompt and prompt.Enabled and prompt.Parent then
                             local part = prompt.Parent:IsA("BasePart") and prompt.Parent or obj:FindFirstChildWhichIsA("BasePart", true)
                             if part and _G.AlitHubFarmActive then
-                                -- Memicu Teleportasi Instan Langsung Tanpa Meluncur Udara
                                 instantTeleportTo(root, part.CFrame)
                                 executePerfectHarvest(prompt)
+                                break -- FIXED: Memutus antrean loop untuk mengaktifkan MASA_TUNGGU di setiap 1 target
                             end
                         end
                     end
@@ -220,16 +222,19 @@ task.spawn(function()
                     if slot then
                         local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
                         if prompt and prompt.Enabled then
+                            local breakLoop = false
                             for _, toolName in ipairs(SelectedRestock) do
                                 if equipItem(toolName) then
                                     local targetPart = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
                                     if targetPart and _G.AlitHubRestockActive then
                                         instantTeleportTo(root, targetPart.CFrame)
                                         executePerfectHarvest(prompt)
+                                        breakLoop = true
+                                        break
                                     end
-                                    break
                                 end
                             end
+                            if breakLoop then break end -- FIXED: Jeda mandiri setiap selesai 1 slot kios
                         end
                     end
                 end
@@ -245,6 +250,7 @@ task.spawn(function()
                     if pakanPrompt then
                         local textStatus = pakanPrompt.ObjectText or ""
                         if string.find(textStatus, "0/10") or textStatus == "" then
+                            local breakFeed = false
                             for _, foodName in ipairs(SelectedFeed) do
                                 if equipItem(foodName) then
                                     local pmPart = tempatMakan:IsA("BasePart") and tempatMakan or tempatMakan:FindFirstChildWhichIsA("BasePart", true)
@@ -255,10 +261,12 @@ task.spawn(function()
                                             task.wait(0.1)
                                             if not equipItem(foodName) then break end
                                         end
+                                        breakFeed = true
                                     end
                                     break
                                 end
                             end
+                            if breakFeed then task.wait(0.1) end
                         end
                     end
                 end
@@ -274,6 +282,7 @@ task.spawn(function()
                                     if babiPart and _G.AlitHubPigActive then
                                         instantTeleportTo(root, babiPart.CFrame)
                                         executePerfectHarvest(panenPrompt)
+                                        break -- FIXED: Jeda mandiri setiap selesai memanen 1 ekor babi dewasa
                                     end
                                 end
                             end
