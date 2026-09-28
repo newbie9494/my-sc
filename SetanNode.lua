@@ -22,13 +22,9 @@ local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
--- ====================================================================
--- SETTINGAN DELAY MANDIRI (MURNI TERISOLASI SESUAI PERMINTAAN ANDA)
--- ====================================================================
-local BLINK_SPEED = 50         -- Kecepatan gerak karakter saat menuju target
-local TELEPORT_DELAY = 0.2      -- Jeda diam sejenak SETELAH SAMPAI di target baru
+-- SETTINGAN DELAY MANDIRI YANG SUDAH PAS SESUAI LOGIKA ANDA
+local TELEPORT_DELAY = 0.2      -- Jeda diam sejenak SETELAH TELEPORT INSTAN di target baru
 local MASA_TUNGGU = 1.5         -- Jeda masa tunggu diam di tempat SETELAH TARGET PANEN SELESAI
--- ====================================================================
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
@@ -57,12 +53,12 @@ Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 5)
 
 local RestockButton = Instance.new("TextButton")
 RestockButton.Name = "RestockButton"; RestockButton.Parent = ContentFrame; RestockButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); RestockButton.Position = UDim2.new(0.36, 0, 0.02, 0); RestockButton.Size = UDim2.new(0.29, 0, 0, 32)
-RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "STOCK: OFF"; RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255); RestockButton.TextSize = 9
+RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "STOCK: OFF"; RestockButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 5)
 
 local PigButton = Instance.new("TextButton")
 PigButton.Name = "PigButton"; PigButton.Parent = ContentFrame; PigButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69); PigButton.Position = UDim2.new(0.68, 0, 0.02, 0); PigButton.Size = UDim2.new(0.29, 0, 0, 32)
-PigButton.Font = Enum.Font.GothamBold; PigButton.Text = "PIG: OFF"; PigButton.TextColor3 = Color3.fromRGB(255, 255, 255); PigButton.TextSize = 9
+PigButton.Font = Enum.Font.GothamBold; PigButton.Text = "PIG: OFF"; PigButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", PigButton).CornerRadius = UDim.new(0, 5)
 -- [[ ALIT HUB - TELEPORT INSTAN + RESTOCK & PIG FARM PART 2 ]]
 local DropdownButton = Instance.new("TextButton")
@@ -139,36 +135,30 @@ local function equipItem(itemName)
     return char and char:FindFirstChild(itemName) ~= nil
 end
 
-local function blinkTravelTo(root, humanoid, targetCFrame)
-    if root and humanoid then
-        local distance = (root.Position - targetCFrame.Position).Magnitude
-        local duration = distance / BLINK_SPEED
-        humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+-- FIXED: Mengubah Metode Gerak Meluncur (Tween) Menjadi Teleportasi Koordinat Instan (1 Frame)
+local function instantTeleportTo(root, targetCFrame)
+    if root then
         root.Velocity = Vector3.new(0, 0, 0)
-        local tween = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
-        tween:Play(); tween.Completed:Wait()
+        root.CFrame = targetCFrame  -- Mengubah posisi koordinat seketika tanpa proses meluncur udara
         root.Velocity = Vector3.new(0, 0, 0)
-        humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
     end
 end
 
--- FIXED: IMPLEMENTASI LOGIKA BARU ISOLASI WAKTU TOTAL SESUAI URUTAN USER
+-- LOGIKA ISOLASI WAKTU UTUH MANDIRI SINKRONISASI USER
 local function executePerfectHarvest(prompt)
     if not prompt or not prompt.Enabled then return end
     
-    -- 1. Ketika sampai pada target pertama akan ada delay 0,2 detik (Murni Sesuai Variabel TELEPORT_DELAY)
+    -- Jeda diam sejenak SETELAH SAMPAI di target baru (0.2 detik)
     task.wait(TELEPORT_DELAY)
     
-    -- 2. Lalu script akan menekan tombol E / panen selama 0.5 detik murni
+    -- Menekan tombol E / panen selama 0.5 detik murni
     prompt:InputHoldBegin()
-    task.wait(0.5) -- Kunci penekanan tangan 0.5 detik pas syarat Pasar Hutan
+    task.wait(0.5) 
     prompt:InputHoldEnd()
     
-    -- Bypass Opsional: Tambahan trigger eksekusi instan Delta jika didukung executor perangkat
     if fireproximityprompt then fireproximityprompt(prompt) end
     
-    -- 3. Ketika script sudah mendeteksi bahwa target sudah di panen (hilang/mati)
-    -- Maka skrip mengunci masa tunggu diam mandiri sebelum putaran berikutnya
+    -- Jeda masa tunggu diam di tempat SETELAH TARGET PANEN SELESAI (1.5 detik)
     task.wait(MASA_TUNGGU)
 end
 
@@ -198,12 +188,11 @@ end)
 
 task.spawn(function()
     while true do
-        task.wait(0.1) -- Jeda perulangan dasar sangat ringan
+        task.wait(0.1)
         local char = LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         
-        -- MODE FARMING: Berjalan teratur urutan target pertama -> target selanjutnya
         if _G.AlitHubFarmActive and #SelectedTargets > 0 and root and hum then
             local folder = workspace:FindFirstChild("SpawnBahan")
             if folder then
@@ -213,9 +202,8 @@ task.spawn(function()
                         if prompt and prompt.Enabled and prompt.Parent then
                             local part = prompt.Parent:IsA("BasePart") and prompt.Parent or obj:FindFirstChildWhichIsA("BasePart", true)
                             if part and _G.AlitHubFarmActive then
-                                -- Menuju target pertama dengan kontrol kecepatan BLINK_SPEED
-                                blinkTravelTo(root, hum, part.CFrame)
-                                -- Jalankan rangkaian alur holding terisolasi
+                                -- Memicu Teleportasi Instan Langsung Tanpa Meluncur Udara
+                                instantTeleportTo(root, part.CFrame)
                                 executePerfectHarvest(prompt)
                             end
                         end
@@ -236,7 +224,7 @@ task.spawn(function()
                                 if equipItem(toolName) then
                                     local targetPart = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
                                     if targetPart and _G.AlitHubRestockActive then
-                                        blinkTravelTo(root, hum, targetPart.CFrame)
+                                        instantTeleportTo(root, targetPart.CFrame)
                                         executePerfectHarvest(prompt)
                                     end
                                     break
@@ -261,7 +249,7 @@ task.spawn(function()
                                 if equipItem(foodName) then
                                     local pmPart = tempatMakan:IsA("BasePart") and tempatMakan or tempatMakan:FindFirstChildWhichIsA("BasePart", true)
                                     if pmPart and _G.AlitHubPigActive then
-                                        blinkTravelTo(root, hum, pmPart.CFrame)
+                                        instantTeleportTo(root, pmPart.CFrame)
                                         while pakanPrompt.Enabled and _G.AlitHubPigActive and not string.find(pakanPrompt.ObjectText, "10/10") do
                                             executePerfectHarvest(pakanPrompt)
                                             task.wait(0.1)
@@ -284,7 +272,7 @@ task.spawn(function()
                                 if panenPrompt and panenPrompt.Enabled then
                                     local babiPart = babi:IsA("BasePart") and babi or babi:FindFirstChildWhichIsA("BasePart", true)
                                     if babiPart and _G.AlitHubPigActive then
-                                        blinkTravelTo(root, hum, babiPart.CFrame)
+                                        instantTeleportTo(root, babiPart.CFrame)
                                         executePerfectHarvest(panenPrompt)
                                     end
                                 end
