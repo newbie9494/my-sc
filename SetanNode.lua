@@ -25,7 +25,7 @@ local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
--- UPDATED CONFIGURATION PARAMETERS
+-- UPDATED CONFIGURATION PARAMETERS (STABIL & AMAN)
 local BLINK_SPEED = 250
 local POST_PANEN_DELAY = 0.7
 local TELEPORT_DELAY = 0.6
@@ -128,10 +128,6 @@ ListContainer.CanvasSize = UDim2.new(0, 0, 0, 160); ListContainer2.CanvasSize = 
 DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "TARGET FARM ▲" or "TARGET FARM ▼" end)
 DropdownButton2.Activated:Connect(function() ListContainer2.Visible = not ListContainer2.Visible; DropdownButton2.Text = ListContainer2.Visible and "TARGET RESTOCK ▲" or "TARGET RESTOCK ▼" end)
 DropdownButton3.Activated:Connect(function() ListContainer3.Visible = not ListContainer3.Visible; DropdownButton3.Text = ListContainer3.Visible and "TARGET PAKAN PIG ▲" or "TARGET PAKAN PIG ▼" end)
-
-ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); ToggleButton.Text = _G.AlitHubFarmActive and "FARM: ON" or "FARM: OFF" end)
-RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "STOCK: ON" or "STOCK: OFF" end)
-PigButton.Activated:Connect(function() _G.AlitHubPigActive = not _G.AlitHubPigActive; PigButton.BackgroundColor3 = _G.AlitHubPigActive and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(220, 53, 69); PigButton.Text = _G.AlitHubPigActive and "PIG: ON" or "PIG: OFF" end)
 -- [[ ALIT HUB - TELEPORT INSTAN + RESTOCK & PIG FARM PART 3 ]]
 local function equipItem(itemName)
     local bp = LocalPlayer:FindFirstChild("Backpack")
@@ -154,6 +150,14 @@ local function blinkTravelTo(root, humanoid, targetCFrame)
         root.Velocity = Vector3.new(0, 0, 0)
         humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
     end
+end
+
+-- FIXED: Memaksa tahanan jari legal selama 0.6 detik agar server mengesahkan proses panen
+local function secureHoldPrompt(prompt)
+    if not prompt or not prompt.Enabled then return end
+    prompt:InputHoldBegin()
+    task.wait(0.6) -- Memenuhi syarat minimum 0.5 detik game Pasar Hutan + toleransi ping
+    prompt:InputHoldEnd()
 end
 
 -- SYSTEM DRAGGABLE MANUAL (BYPASS EROR MOBILE)
@@ -198,8 +202,7 @@ task.spawn(function()
                             if part then
                                 blinkTravelTo(root, hum, part.CFrame); task.wait(TELEPORT_DELAY)
                                 if _G.AlitHubFarmActive and prompt.Enabled then
-                                    if fireproximityprompt then fireproximityprompt(prompt) end
-                                    prompt:InputHoldBegin(); task.wait(prompt.HoldDuration + 0.05); prompt:InputHoldEnd()
+                                    secureHoldPrompt(prompt)
                                     task.wait(POST_PANEN_DELAY)
                                 end
                             end
@@ -223,8 +226,7 @@ task.spawn(function()
                                     if targetPart then
                                         blinkTravelTo(root, hum, targetPart.CFrame); task.wait(TELEPORT_DELAY)
                                         if prompt.Enabled and _G.AlitHubRestockActive then
-                                            if fireproximityprompt then fireproximityprompt(prompt) end
-                                            prompt:InputHoldBegin(); task.wait(prompt.HoldDuration + 0.05); prompt:InputHoldEnd()
+                                            secureHoldPrompt(prompt)
                                             task.wait(POST_PANEN_DELAY)
                                         end
                                     end
@@ -252,8 +254,7 @@ task.spawn(function()
                                     if pmPart then
                                         blinkTravelTo(root, hum, pmPart.CFrame); task.wait(TELEPORT_DELAY)
                                         while pakanPrompt.Enabled and _G.AlitHubPigActive and not string.find(pakanPrompt.ObjectText, "10/10") do
-                                            if fireproximityprompt then fireproximityprompt(pakanPrompt) end
-                                            pakanPrompt:InputHoldBegin(); task.wait(pakanPrompt.HoldDuration + 0.05); pakanPrompt:InputHoldEnd()
+                                            secureHoldPrompt(pakanPrompt)
                                             task.wait(0.2)
                                             if not equipItem(foodName) then break end
                                         end
@@ -276,8 +277,7 @@ task.spawn(function()
                                     if babiPart then
                                         blinkTravelTo(root, hum, babiPart.CFrame); task.wait(TELEPORT_DELAY)
                                         if panenPrompt.Enabled and _G.AlitHubPigActive then
-                                            if fireproximityprompt then fireproximityprompt(panenPrompt) end
-                                            panenPrompt:InputHoldBegin(); task.wait(panenPrompt.HoldDuration + 0.05); panenPrompt:InputHoldEnd()
+                                            secureHoldPrompt(panenPrompt)
                                             task.wait(POST_PANEN_DELAY)
                                         end
                                     end
