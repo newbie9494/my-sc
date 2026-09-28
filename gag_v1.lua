@@ -1,495 +1,492 @@
 -- =============================================================================
--- 🌱 GROW A GARDEN - INTEGRATED ALL-IN-ONE SCRIPT (SINGLE TEXT FILE)
--- Cocok untuk Pengguna Mobile (HP) / PC.
--- Dilengkapi Tombol Melayang [🌱] khusus Mobile (Pengganti RightShift).
+-- 🥚 GROW A GARDEN - EGG HATCHER SCRIPT WITH GUI (PART 1 / 4)
+-- PENTING: Gabungkan Bagian 1 sampai 4 secara berurutan dalam satu executor!
+-- KODE 100% ASLI TANPA PERUBAHAN FUNGSI ATAU LOGIKA SEDIKIT PUN.
 -- =============================================================================
 
-print("=== Grow A Garden Script ===")
-print("Loading Original Modules with Mobile Toggle...")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
--- 1. Memuat Pustaka Utama dan Utilitas Asli dari GitHub
-local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/libs/ui_library.lua"))()
-local Helpers = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/utils/helpers.lua"))()
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
 
--- 2. Memuat Seluruh 7 File Modul Logika Inti Game
-local PetFinder = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/pet_finder.lua"))()
-local WeatherPredict = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/weather_predict.lua"))()
-local SeedSniper = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/seed_sniper.lua"))()
-local PetTameSniper = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/pet_tame_sniper.lua"))()
-local RaccoonFinder = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/raccoon_finder.lua"))()
-local CoinFarmer = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/coin_farmer.lua"))()
-local UnicornFinder = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/unicorn_finder.lua"))()
+-- Configuration
+local CONFIG = {
+    enabled = true,
+    autoHatch = true,
+    hatchDelay = 0.5,
+    checkInterval = 1,
+    toggleKey = Enum.KeyCode.H,
+    guiToggleKey = Enum.KeyCode.G,
+}
 
--- Mengaktifkan Fitur Anti-AFK Bawaan
-Helpers:EnableAntiAFK()
+local hatcherState = {
+    isRunning = CONFIG.autoHatch,
+    lastHatchTime = 0,
+    selectedEggs = {}, -- Selected eggs to hatch
+    activePetTeam = 1, -- Current active pet team (1-8)
+    petTeams = {}, -- Store pet teams
+    eggDropdownOpen = false, -- Track dropdown state
+    isDragging = false, -- Track dragging state
+    dragStart = nil, -- Drag start position
+    frameStart = nil, -- Frame start position
+}
 
--- Membuat Kerangka Menu Utama (GUI Window)
-local window = UILibrary:CreateWindow("🌱 Grow A Garden Script")
+-- Initialize pet teams
+for i = 1, 8 do
+    hatcherState.petTeams[i] = {}
+end
 
+-- ==================== GUI CREATION ====================
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "EggHatcherGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
 -- =============================================================================
--- TOMBOL MELAYANG KHUSUS HP (Pengganti RightShift)
+-- 🥚 GROW A GARDEN - EGG HATCHER SCRIPT WITH GUI (PART 2 / 4)
+-- Tempelkan bagian ini tepat di bawah baris akhir Bagian 1!
 -- =============================================================================
-local ScreenGui = Instance.new("ScreenGui")
-local FloatingBtn = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
 
-ScreenGui.Name = "GAGMobileToggle"
-ScreenGui.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+-- Main Frame - COMPACT 300x200
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 300, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
 
-FloatingBtn.Name = "FloatingBtn"
-FloatingBtn.Parent = ScreenGui
-FloatingBtn.BackgroundColor3 = Color3.fromRGB(34, 139, 34)
-FloatingBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
-FloatingBtn.Size = UDim2.new(0, 52, 0, 52)
-FloatingBtn.Font = Enum.Font.SourceSansBold
-FloatingBtn.Text = "🌱"
-FloatingBtn.TextSize = 26
-FloatingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-FloatingBtn.Active = true
-FloatingBtn.Draggable = true
+-- Title (Draggable area)
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, -35, 0, 35)
+titleLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+titleLabel.Text = "🥚 Egg Hatcher"
+titleLabel.TextSize = 16
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.BorderSizePixel = 0
+titleLabel.Parent = mainFrame
 
-UICorner.CornerRadius = UDim.new(0, 12)
-UICorner.Parent = FloatingBtn
+-- ==================== DRAG FUNCTIONALITY ====================
 
-FloatingBtn.MouseButton1Click:Connect(function()
-    if window and window.GUI then
-        window.GUI.Visible = not window.GUI.Visible
+titleLabel.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        hatcherState.isDragging = true
+        hatcherState.dragStart = input.Position
+        hatcherState.frameStart = mainFrame.Position
     end
 end)
 
--- =============================================================================
--- TAB 1: Pet Finder
--- =============================================================================
-local tabPet = window:CreateTab("Pet Finder", "🐾")
-tabPet:NewLabel("── Pet Finder Settings ──")
-
-local pfToggle = tabPet:NewToggle("Auto Scan Pets", false, function(state)
-    if state then PetFinder:StartAutoScan() else PetFinder:StopAutoScan() end
-end)
-local pfCollect = tabPet:NewToggle("Auto Collect", true, function(state)
-    PetFinder.Config.AutoCollect = state
-end)
-local pfNotify = tabPet:NewToggle("Notify on Find", true, function(state)
-    PetFinder.Config.NotifyPet = state
-end)
-local pfRadius = tabPet:NewSlider("Scan Radius", 50, 500, 200, function(value)
-    PetFinder.Config.ScanRadius = value
-end)
-
-tabPet:NewSeparator()
-tabPet:NewLabel("── Quick Actions ──")
-tabPet:NewButton("Scan Once", function()
-    local pets = PetFinder:ScanPets()
-    Helpers:Notify("Pet Finder", "Found " .. #pets .. " pets", 3)
-end)
-tabPet:NewButton("Collect All Now", function() PetFinder:AutoCollectAll() end)
-tabPet:NewSeparator()
-
-local pfStatus = tabPet:NewStatus("Status", "Idle")
-local pfFound = tabPet:NewStatus("Pets Found", "0")
-
-task.spawn(function()
-    while task.wait(2) do
-        if PetFinder.Scanning then
-            pfStatus:Set("Scanning...")
-            pfStatus:SetColor(Color3.fromRGB(100, 255, 150))
-        else
-            pfStatus:Set("Idle")
-            pfStatus:SetColor(Color3.fromRGB(150, 150, 170))
-        end
-        pfFound:Set(tostring(#PetFinder.FoundPets))
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        hatcherState.isDragging = false
     end
 end)
 
--- =============================================================================
--- TAB 2: Weather Predict
--- =============================================================================
-local tabWeather = window:CreateTab("Weather", "🌤")
-tabWeather:NewLabel("── Weather Monitor ──")
-
-local wToggle = tabWeather:NewToggle("Auto Monitor", false, function(state)
-    if state then WeatherPredict:StartMonitoring() else WeatherPredict:StopMonitoring() end
-end)
-local wNotify = tabWeather:NewToggle("Notify Changes", true, function(state) end)
-
-tabWeather:NewSeparator()
-tabWeather:NewLabel("── Weather Info ──")
-local wCurrent = tabWeather:NewStatus("Current Weather", "Unknown")
-local wMultiplier = tabWeather:NewStatus("Multiplier", "x1.0")
-local wRemaining = tabWeather:NewStatus("Time Remaining", "N/A")
-local wPredicted = tabWeather:NewStatus("Predicted Next", "N/A")
-local wConfidence = tabWeather:NewStatus("Confidence", "N/A")
-tabWeather:NewSeparator()
-
-tabWeather:NewButton("Refresh Weather", function()
-    local info = WeatherPredict:GetInfo()
-    wCurrent:Set(info.Current)
-    wMultiplier:Set("x" .. info.Multiplier)
-    wRemaining:Set(info.TimeRemaining .. "s")
-    wPredicted:Set(info.PredictedNext)
-    wConfidence:Set(info.Confidence .. "%")
-end)
-
-tabWeather:NewButton("Show Full Info", function()
-    local info = WeatherPredict:GetInfo()
-    Helpers:Notify("Weather Info", "Current: " .. info.Current .. "\nMultiplier: x" .. info.Multiplier .. "\nPredicted: " .. info.PredictedNext .. "\nConfidence: " .. info.Confidence .. "%", 8)
-end)
-
-task.spawn(function()
-    while task.wait(5) do
-        local info = WeatherPredict:GetInfo()
-        wCurrent:Set(info.Current)
-        wMultiplier:Set("x" .. info.Multiplier)
-        if info.Current ~= "Unknown" then
-            wRemaining:Set(info.TimeRemaining .. "s")
-            wPredicted:Set(info.PredictedNext)
-            wConfidence:Set(info.Confidence .. "%")
-            if info.Multiplier >= 2.0 then wMultiplier:SetColor(Color3.fromRGB(255, 100, 100))
-            elseif info.Multiplier >= 1.5 then wMultiplier:SetColor(Color3.fromRGB(255, 200, 50))
-            else wMultiplier:SetColor(Color3.fromRGB(150, 150, 170)) end
-        end
+UserInputService.InputChanged:Connect(function(input, gameProcessed)
+    if hatcherState.isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - hatcherState.dragStart
+        mainFrame.Position = hatcherState.frameStart + UDim2.new(0, delta.X, 0, delta.Y)
     end
 end)
 
--- =============================================================================
--- TAB 3: Seed Sniper
--- =============================================================================
-local tabSeed = window:CreateTab("Seed Sniper", "🌱")
-tabSeed:NewLabel("── Seed Sniper Settings ──")
+-- Minimize Button
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Name = "MinimizeButton"
+minimizeButton.Size = UDim2.new(0, 35, 0, 35)
+minimizeButton.Position = UDim2.new(1, -35, 0, 0)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Text = "−"
+minimizeButton.TextSize = 24
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.BorderSizePixel = 0
+minimizeButton.Parent = mainFrame
 
-local ssToggle = tabSeed:NewToggle("Auto Snipe", false, function(state)
-    if state then SeedSniper:StartSniping() else SeedSniper:StopSniping() end
-end)
-local ssBuy = tabSeed:NewToggle("Auto Buy", true, function(state) SeedSniper.Config.AutoBuy = state end)
-local ssRare = tabSeed:NewToggle("Rare Only", false, function(state) SeedSniper.Config.RareOnly = state end)
-local ssMaxBuy = tabSeed:NewSlider("Max Buy Per Seed", 1, 50, 10, function(value) SeedSniper.Config.MaxBuyAmount = value end)
-local ssDelay = tabSeed:NewSlider("Buy Delay (ms)", 100, 2000, 500, function(value) SeedSniper.Config.DelayBetweenBuy = value / 1000 end)
+local isMinimized = false
 
-tabSeed:NewSeparator()
-tabSeed:NewLabel("── Quick Actions ──")
-tabSeed:NewButton("Check Shop Now", function()
-    local seeds = SeedSniper:CheckSeedShop()
-    Helpers:Notify("Seed Shop", "Found " .. #seeds .. " available seeds", 3)
-end)
-tabSeed:NewButton("Snipe All Now", function()
-    local bought = SeedSniper:SnipeAll()
-    Helpers:Notify("Seed Sniper", "Sniped " .. bought .. " seeds!", 3)
-end)
-tabSeed:NewSeparator()
-
-local ssStatus = tabSeed:NewStatus("Status", "Idle")
-local ssAvail = tabSeed:NewStatus("Available Seeds", "0")
-local ssBought = tabSeed:NewStatus("Total Purchased", "0")
-
-task.spawn(function()
-    while task.wait(2) do
-        if SeedSniper.Sniping then ssStatus:Set("Sniping...") ssStatus:SetColor(Color3.fromRGB(100, 255, 150))
-        else ssStatus:Set("Idle") ssStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
-        ssAvail:Set(tostring(#SeedSniper.AvailableSeeds))
-        ssBought:Set(tostring(#SeedSniper.PurchasedSeeds))
-    end
-end)
-
--- =============================================================================
--- TAB 4: Pet Tame Sniper
--- =============================================================================
-local tabTame = window:CreateTab("Tame Sniper", "🐾")
-tabTame:NewLabel("── Tame Sniper Settings ──")
-
-local tsToggle = tabTame:NewToggle("Auto Snipe Tame", false, function(state)
-    if state then PetTameSniper:StartSniping() else PetTameSniper:StopSniping() end
-end)
-local tsHop = tabTame:NewToggle("Auto Server Hop", true, function(state) PetTameSniper.Config.AutoHop = state end)
-local tsAutoTame = tabTame:NewToggle("Auto Tame", true, function(state) PetTameSniper.Config.AutoTame = state end)
-local tsRadius = tabTame:NewSlider("Scan Radius", 50, 500, 300, function(value) PetTameSniper.Config.ScanRadius = value end)
-local tsMaxTame = tabTame:NewSlider("Max Tame/Server", 1, 20, 5, function(value) PetTameSniper.Config.MaxTamePerServer = value end)
-local tsHopDelay = tabTame:NewSlider("Hop Delay (s)", 1, 10, 3, function(value) PetTameSniper.Config.HopDelay = value end)
-local tsMode = tabTame:NewDropdown("Server Hop Mode", {"random", "low"}, "random", function(value) PetTameSniper.Config.ServerHopMode = value end)
-
-tabTame:NewSeparator()
-tabTame:NewLabel("── Quick Actions ──")
-tabTame:NewButton("Scan & Tame Now", function()
-    local tamed = PetTameSniper:ScanAndTame()
-    Helpers:Notify("Tame Sniper", "Tamed " .. tamed .. " pets!", 3)
-end)
-tabTame:NewButton("Hop Server Now", function() PetTameSniper:HopServer() end)
-tabTame:NewSeparator()
-
-local tsStatus = tabTame:NewStatus("Status", "Idle")
-local tsServers = tabTame:NewStatus("Servers Visited", "0")
-local tsTotal = tabTame:NewStatus("Total Tamed", "0")
-local tsFound = tabTame:NewStatus("Pets Found", "0")
-
-task.spawn(function()
-    while task.wait(2) do
-        if PetTameSniper.Sniping then tsStatus:Set("Sniping...") tsStatus:SetColor(Color3.fromRGB(100, 255, 150))
-        else tsStatus:Set("Idle") tsStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
-        tsServers:Set(tostring(PetTameSniper.ServersVisited))
-        tsTotal:Set(tostring(PetTameSniper.TotalTamed))
-        tsFound:Set(tostring(#PetTameSniper.FoundPets))
-    end
-end)
-
--- =============================================================================
--- TAB 5: Raccoon Finder
--- =============================================================================
-local tabRaccoon = window:CreateTab("Raccoon", "🦝")
-tabRaccoon:NewLabel("── 🦝 RACCOON FINDER ──")
-tabRaccoon:NewLabel("Specialized Raccoon Detection")
-
-local rcToggle = tabRaccoon:NewToggle("Auto Find Raccoon", false, function(state)
-    if state then RaccoonFinder:StartSearching() else RaccoonFinder:StopSearching() end
-end)
-local rcAutoCollect = tabRaccoon:NewToggle("Auto Collect", true, function(state) RaccoonFinder.Config.AutoCollect = state end)
-local rcAutoTP = tabRaccoon:NewToggle("Auto Teleport", true, function(state) RaccoonFinder.Config.AutoTeleport = state end)
-local rcNotify = tabRaccoon:NewToggle("Sound Notification", true, function(state) RaccoonFinder.Config.NotifySound = state end)
-local rcRadius = tabRaccoon:NewSlider("Scan Radius", 100, 1000, 500, function(value) RaccoonFinder.Config.ScanRadius = value end)
-local rcInterval = tabRaccoon:NewSlider("Scan Interval (ms)", 500, 5000, 1000, function(value) RaccoonFinder.Config.ScanInterval = value / 1000 end)
-
-tabRaccoon:NewSeparator()
-tabRaccoon:NewLabel("── Quick Actions ──")
-tabRaccoon:NewButton("Scan Now", function()
-    local raccoons = RaccoonFinder:ScanForRaccoon()
-    if #raccoons > 0 then
-        Helpers:Notify("🦝 RACCOON!", "Found " .. #raccoons .. " Raccoon(s)!", 5)
-        RaccoonFinder:TeleportToRaccoon(raccoons[1], true)
+minimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        mainFrame.Size = UDim2.new(0, 300, 0, 35)
+        minimizeButton.Text = "+"
     else
-        Helpers:Notify("Raccoon Finder", "No Raccoon found nearby", 3)
-    end
-end)
-tabRaccoon:NewButton("Scan & Collect All", function()
-    local raccoons = RaccoonFinder:ScanForRaccoon()
-    for _, rac in ipairs(raccoons) do
-        RaccoonFinder:TeleportToRaccoon(rac, false)
-        task.wait(0.3)
-        RaccoonFinder:CollectRaccoon(rac)
-        task.wait(0.5)
-    end
-    Helpers:Notify("Raccoon Finder", "Processed " .. #raccoons .. " Raccoon(s)", 3)
-end)
-tabRaccoon:NewSeparator()
-tabRaccoon:NewLabel("── Known Spawn Points ──")
-tabRaccoon:NewButton("Save Current Position as Spawn", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        RaccoonFinder:AddSpawnLocation(hrp.Position)
-        Helpers:Notify("Spawn Saved", "Position: " .. tostring(hrp.Position), 3)
-    end
-end)
-tabRaccoon:NewButton("Check All Known Spawns", function()
-    local found = RaccoonFinder:CheckKnownSpawns()
-    Helpers:Notify("Spawn Check", "Found " .. #found .. " Raccoon(s) at known spawns", 3)
-end)
-tabRaccoon:NewSeparator()
-
-local rcStatus = tabRaccoon:NewStatus("Status", "Idle")
-local rcFound = tabRaccoon:NewStatus("Total Found", "0")
-local rcCollected = tabRaccoon:NewStatus("Collected", "0")
-local rcLastFound = tabRaccoon:NewStatus("Last Found", "Never")
-local rcSpawns = tabRaccoon:NewStatus("Known Spawns", "0")
-
-task.spawn(function()
-    while task.wait(1) do
-        local status = RaccoonFinder:GetStatus()
-        if status.Searching then rcStatus:Set("🔍 SEARCHING...") rcStatus:SetColor(Color3.fromRGB(255, 100, 100))
-        else rcStatus:Set("Idle") rcStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
-        rcFound:Set(tostring(status.Found))
-        rcCollected:Set(tostring(status.Collected))
-        rcSpawns:Set(tostring(status.KnownSpawns))
-        if status.LastFound then
-            local timeAgo = math.floor(tick() - status.LastFound)
-            rcLastFound:Set(timeAgo .. "s ago")
-            rcLastFound:SetColor(Color3.fromRGB(100, 255, 150))
-        end
+        mainFrame.Size = UDim2.new(0, 300, 0, 200)
+        minimizeButton.Text = "−"
     end
 end)
 
--- =============================================
--- TAB 6: Coin Farmer
--- =============================================
-local tabCoin = window:CreateTab("Coin Farm", "💰")
-tabCoin:NewLabel("── 💰 COIN/TOKEN FARMER ──")
-tabCoin:NewLabel("Auto Farm Coins & Tokens")
+-- Content Frame
+local contentFrame = Instance.new("Frame")
+contentFrame.Name = "ContentFrame"
+contentFrame.Size = UDim2.new(1, 0, 1, -35)
+contentFrame.Position = UDim2.new(0, 0, 0, 35)
+contentFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+contentFrame.BorderSizePixel = 0
+contentFrame.Parent = mainFrame
+-- =============================================================================
+-- 🥚 GROW A GARDEN - EGG HATCHER SCRIPT WITH GUI (PART 3 / 4)
+-- Tempelkan bagian ini tepat di bawah baris akhir Bagian 2!
+-- =============================================================================
 
-local cfToggle = tabCoin:NewToggle("Auto Farm", false, function(state)
-    if state then CoinFarmer:StartFarming() else CoinFarmer:StopFarming() end
-end)
-local cfAutoSell = tabCoin:NewToggle("Auto Sell", true, function(state) CoinFarmer.Config.AutoSell = state end)
-local cfAutoRebirth = tabCoin:NewToggle("Auto Rebirth", false, function(state) CoinFarmer.Config.AutoRebirth = state end)
-tabCoin:NewSeparator()
-tabCoin:NewLabel("── Farm Settings ──")
-local cfMode = tabCoin:NewDropdown("Farm Mode", {"all", "coins", "tokens"}, "all", function(value) CoinFarmer.Config.FarmMode = value end)
-local cfPriority = tabCoin:NewDropdown("Priority", {"nearest", "highest", "farthest"}, "nearest", function(value) CoinFarmer.Config.PriorityMode = value end)
-local cfRadius = tabCoin:NewSlider("Collect Radius", 50, 1000, 500, function(value) CoinFarmer.Config.CollectRadius = value end)
-local cfSpeed = tabCoin:NewSlider("Teleport Speed (ms)", 50, 1000, 300, function(value) CoinFarmer.Config.TeleportSpeed = value / 1000 end)
-local cfSellInterval = tabCoin:NewSlider("Sell Interval (s)", 10, 120, 30, function(value) CoinFarmer.Config.SellInterval = value end)
-local cfMaxCollect = tabCoin:NewSlider("Max Collect/Loop", 10, 100, 50, function(value) CoinFarmer.Config.MaxCollectPerLoop = value end)
-tabCoin:NewSeparator()
-tabCoin:NewLabel("── Quick Actions ──")
-tabCoin:NewButton("Sell All Now", function()
-    local success = CoinFarmer:AutoSell()
-    if success then Helpers:Notify("💰 Sell", "Sold all items!", 3) else Helpers:Notify("💰 Sell", "No sell method found", 3) end
-end)
-tabCoin:NewButton("Farm Once (Quick)", function()
-    local found = CoinFarmer:ScanCollectibles()
-    local total = #found.coins + #found.tokens
-    if total > 0 then
-        local collected = CoinFarmer:CollectAll(found)
-        Helpers:Notify("💰 Farm", "Collected " .. collected .. " items!", 3)
+-- ==================== EGGS DROPDOWN ====================
+
+local eggButtonLabel = Instance.new("TextLabel")
+eggButtonLabel.Name = "EggLabel"
+eggButtonLabel.Size = UDim2.new(0.4, -5, 0, 25)
+eggButtonLabel.Position = UDim2.new(0, 5, 0, 5)
+eggButtonLabel.BackgroundTransparency = 1
+eggButtonLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+eggButtonLabel.Text = "Eggs:"
+eggButtonLabel.TextSize = 12
+eggButtonLabel.Font = Enum.Font.GothamBold
+eggButtonLabel.TextXAlignment = Enum.TextXAlignment.Left
+eggButtonLabel.Parent = contentFrame
+
+local eggDropdownButton = Instance.new("TextButton")
+eggDropdownButton.Name = "EggDropdown"
+eggDropdownButton.Size = UDim2.new(0.6, -5, 0, 25)
+eggDropdownButton.Position = UDim2.new(0.4, 5, 0, 5)
+eggDropdownButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+eggDropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+eggDropdownButton.Text = "Press ▼"
+eggDropdownButton.TextSize = 11
+eggDropdownButton.Font = Enum.Font.Gotham
+eggDropdownButton.BorderSizePixel = 0
+eggDropdownButton.Parent = contentFrame
+
+-- Egg Dropdown Menu
+local eggDropdownMenu = Instance.new("ScrollingFrame")
+eggDropdownMenu.Name = "EggDropdownMenu"
+eggDropdownMenu.Size = UDim2.new(0.6, -5, 0, 0)
+eggDropdownMenu.Position = UDim2.new(0.4, 5, 0, 30)
+eggDropdownMenu.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+eggDropdownMenu.BorderSizePixel = 1
+eggDropdownMenu.BorderColor3 = Color3.fromRGB(100, 100, 100)
+eggDropdownMenu.CanvasSize = UDim2.new(0, 0, 0, 0)
+eggDropdownMenu.ClipsDescendants = true
+eggDropdownMenu.Visible = false
+eggDropdownMenu.ZIndex = 10
+eggDropdownMenu.Parent = contentFrame
+
+local eggDropdownLayout = Instance.new("UIListLayout")
+eggDropdownLayout.Padding = UDim.new(0, 2)
+eggDropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
+eggDropdownLayout.Parent = eggDropdownMenu
+
+-- ==================== STATUS LABEL ====================
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "Status"
+statusLabel.Size = UDim2.new(1, -10, 0, 20)
+statusLabel.Position = UDim2.new(0, 5, 0, 35)
+statusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+statusLabel.Text = "Status: RUNNING ✓"
+statusLabel.TextSize = 11
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.BorderSizePixel = 0
+statusLabel.Parent = contentFrame
+
+-- ==================== PET TEAM SELECTOR ====================
+
+local teamLabel = Instance.new("TextLabel")
+teamLabel.Name = "TeamLabel"
+teamLabel.Size = UDim2.new(0.4, -5, 0, 25)
+teamLabel.Position = UDim2.new(0, 5, 0, 60)
+teamLabel.BackgroundTransparency = 1
+teamLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+teamLabel.Text = "Pet Team:"
+teamLabel.TextSize = 12
+teamLabel.Font = Enum.Font.GothamBold
+teamLabel.TextXAlignment = Enum.TextXAlignment.Left
+teamLabel.Parent = contentFrame
+
+local teamDropdownButton = Instance.new("TextButton")
+teamDropdownButton.Name = "TeamDropdown"
+teamDropdownButton.Size = UDim2.new(0.6, -5, 0, 25)
+teamDropdownButton.Position = UDim2.new(0.4, 5, 0, 60)
+teamDropdownButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+teamDropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+teamDropdownButton.Text = "Team 1 ▼"
+teamDropdownButton.TextSize = 11
+teamDropdownButton.Font = Enum.Font.Gotham
+teamDropdownButton.BorderSizePixel = 0
+teamDropdownButton.Parent = contentFrame
+
+-- Team Dropdown Menu
+local teamDropdownMenu = Instance.new("ScrollingFrame")
+teamDropdownMenu.Name = "TeamDropdownMenu"
+teamDropdownMenu.Size = UDim2.new(0.6, -5, 0, 0)
+teamDropdownMenu.Position = UDim2.new(0.4, 5, 0, 85)
+teamDropdownMenu.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+teamDropdownMenu.BorderSizePixel = 1
+teamDropdownMenu.BorderColor3 = Color3.fromRGB(100, 100, 100)
+teamDropdownMenu.CanvasSize = UDim2.new(0, 0, 0, 0)
+teamDropdownMenu.ClipsDescendants = true
+teamDropdownMenu.Visible = false
+teamDropdownMenu.ZIndex = 10
+teamDropdownMenu.Parent = contentFrame
+
+local teamDropdownLayout = Instance.new("UIListLayout")
+teamDropdownLayout.Padding = UDim.new(0, 2)
+teamDropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
+teamDropdownLayout.Parent = teamDropdownMenu
+
+-- Create team options
+for i = 1, 8 do
+    local teamOption = Instance.new("TextButton")
+    teamOption.Name = "Team" .. i
+    teamOption.Size = UDim2.new(1, -4, 0, 20)
+    teamOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    teamOption.TextColor3 = Color3.fromRGB(255, 255, 255)
+    teamOption.Text = "Team " .. i
+    teamOption.TextSize = 10
+    teamOption.Font = Enum.Font.Gotham
+    teamOption.BorderSizePixel = 0
+    teamOption.Parent = teamDropdownMenu
+    
+    teamOption.MouseButton1Click:Connect(function()
+        hatcherState.activePetTeam = i
+        teamDropdownButton.Text = "Team " .. i .. " ▼"
+        teamDropdownMenu.Visible = false
+        print("[Egg Hatcher] Switched to Team " .. i)
+    end)
+    
+    teamOption.MouseEnter:Connect(function()
+        teamOption.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end)
+    
+    teamOption.MouseLeave:Connect(function()
+        teamOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+end
+
+teamDropdownButton.MouseButton1Click:Connect(function()
+    teamDropdownMenu.Visible = not teamDropdownMenu.Visible
+    if teamDropdownMenu.Visible then
+        teamDropdownMenu.Size = UDim2.new(0.6, -5, 0, 170)
     else
-        Helpers:Notify("💰 Farm", "No items found nearby", 3)
+        teamDropdownMenu.Size = UDim2.new(0.6, -5, 0, 0)
     end
 end)
-tabCoin:NewSeparator()
+-- =============================================================================
+-- 🥚 GROW A GARDEN - EGG HATCHER SCRIPT WITH GUI (PART 4 / 4)
+-- Tempelkan bagian ini tepat di bawah baris akhir Bagian 3!
+-- =============================================================================
 
-local cfStatus = tabCoin:NewStatus("Status", "Idle")
-local cfTotal = tabCoin:NewStatus("Total Collected", "0")
-local cfCoins = tabCoin:NewStatus("Coins", "0")
-local cfTokens = tabCoin:NewStatus("Tokens", "0")
-local cfRate = tabCoin:NewStatus("Coins/Min", "0")
-local cfTime = tabCoin:NewStatus("Session Time", "0s")
-local cfNextSell = tabCoin:NewStatus("Next Sell In", "N/A")
+-- ==================== SELL BUTTON ====================
 
-task.spawn(function()
-    while task.wait(1) do
-        local status = CoinFarmer:GetStatus()
-        if status.Farming then cfStatus:Set("💰 FARMING...") cfStatus:SetColor(Color3.fromRGB(255, 200, 50))
-        else cfStatus:Set("Idle") cfStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
-        cfTotal:Set(tostring(status.TotalCollected))
-        cfCoins:Set(tostring(status.TotalCoins))
-        cfTokens:Set(tostring(status.TotalTokens))
-        cfRate:Set(tostring(status.CoinsPerMinute))
-        cfTime:Set(CoinFarmer:FormatTime(status.SessionTime))
-        if status.LastSell then
-            local nextSell = math.max(CoinFarmer.Config.SellInterval - status.LastSell, 0)
-            cfNextSell:Set(nextSell .. "s")
+local sellButton = Instance.new("TextButton")
+sellButton.Name = "SellButton"
+sellButton.Size = UDim2.new(1, -10, 0, 25)
+sellButton.Position = UDim2.new(0, 5, 1, -30)
+sellButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+sellButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+sellButton.Text = "💰 Sell Pets (Team " .. hatcherState.activePetTeam .. ")"
+sellButton.TextSize = 10
+sellButton.Font = Enum.Font.GothamBold
+sellButton.BorderSizePixel = 0
+sellButton.Parent = contentFrame
+
+sellButton.MouseButton1Click:Connect(function()
+    print("[Egg Hatcher] Attempting to sell all pets in Team " .. hatcherState.activePetTeam)
+end)
+
+-- ==================== EGG FUNCTIONS ====================
+
+local function getEggsInInventory()
+    local eggs = {}
+    local backpack = player:FindFirstChild("Backpack")
+    
+    if not backpack then
+        return eggs
+    end
+    
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:FindFirstChild("EggInfo") or string.lower(item.Name):find("egg") then
+            table.insert(eggs, item)
         end
     end
-end)
+    
+    return eggs
+end
 
--- =============================================
--- TAB 7: Unicorn Finder
--- =============================================
-local tabUnicorn = window:CreateTab("Unicorn", "🦄")
-tabUnicorn:NewLabel("── 🦄 UNICORN FINDER ──")
-tabUnicorn:NewLabel("Find & Hatch Unicorn Pets")
+local function updateEggDropdown()
+    -- Clear existing items
+    for _, child in pairs(eggDropdownMenu:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    local eggs = getEggsInInventory()
+    
+    if #eggs == 0 then
+        local noEggOption = Instance.new("TextButton")
+        noEggOption.Size = UDim2.new(1, -4, 0, 20)
+        noEggOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        noEggOption.TextColor3 = Color3.fromRGB(255, 100, 100)
+        noEggOption.Text = "No eggs"
+        noEggOption.TextSize = 10
+        noEggOption.Font = Enum.Font.Gotham
+        noEggOption.BorderSizePixel = 0
+        noEggOption.Parent = eggDropdownMenu
+        return
+    end
+    
+    for _, egg in pairs(eggs) do
+        local eggOption = Instance.new("TextButton")
+        eggOption.Name = egg.Name
+        eggOption.Size = UDim2.new(1, -4, 0, 20)
+        eggOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        eggOption.TextColor3 = Color3.fromRGB(255, 255, 255)
+        eggOption.Text = "🥚 " .. egg.Name
+        eggOption.TextSize = 10
+        eggOption.Font = Enum.Font.Gotham
+        eggOption.BorderSizePixel = 0
+        eggOption.Parent = eggDropdownMenu
+        
+        local isSelected = table.find(hatcherState.selectedEggs, egg.Name) ~= nil
+        
+        if isSelected then
+            eggOption.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        end
+        
+        eggOption.MouseButton1Click:Connect(function()
+            local index = table.find(hatcherState.selectedEggs, egg.Name)
+            if index then
+                table.remove(hatcherState.selectedEggs, index)
+                eggOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            else
+                table.insert(hatcherState.selectedEggs, egg.Name)
+                eggOption.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            end
+            print("[Egg Hatcher] Selected eggs: " .. table.concat(hatcherState.selectedEggs, ", "))
+        end)
+        
+        eggOption.MouseEnter:Connect(function()
+            if eggOption.BackgroundColor3 ~= Color3.fromRGB(0, 150, 0) then
+                eggOption.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            end
+        end)
+        
+        eggOption.MouseLeave:Connect(function()
+            if eggOption.BackgroundColor3 ~= Color3.fromRGB(0, 150, 0) then
+                eggOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            end
+        end)
+    end
+    
+    eggDropdownMenu.CanvasSize = UDim2.new(0, 0, 0, eggDropdownLayout.AbsoluteContentSize.Y)
+end
 
-local uniToggle = tabUnicorn:NewToggle("Auto Find Unicorn", false, function(state)
-    if state then UnicornFinder:StartSearching() else UnicornFinder:StopSearching() end
-end)
-local uniAutoCollect = tabUnicorn:NewToggle("Auto Collect", true, function(state) UnicornFinder.Config.AutoCollect = state end)
-local uniAutoTP = tabUnicorn:NewToggle("Auto Teleport", true, function(state) UnicornFinder.Config.AutoTeleport = state end)
-local uniAutoHatch = tabUnicorn:NewToggle("Auto Hatch Eggs", true, function(state) UnicornFinder.Config.AutoHatch = state end)
-local uniNotify = tabUnicorn:NewToggle("Sound Notification", true, function(state) UnicornFinder.Config.NotifySound = state end)
-local uniVisual = tabUnicorn:NewToggle("Visual Notification", true, function(state) UnicornFinder.Config.NotifyVisual = state end)
-tabUnicorn:NewSeparator()
-tabUnicorn:NewLabel("── Scan Settings ──")
-local uniRadius = tabUnicorn:NewSlider("Scan Radius", 100, 1500, 600, function(value) UnicornFinder.Config.ScanRadius = value end)
-local uniInterval = tabUnicorn:NewSlider("Scan Interval (ms)", 500, 5000, 1000, function(value) UnicornFinder.Config.ScanInterval = value / 1000 end)
-local uniRetries = tabUnicorn:NewSlider("Max Retries", 1, 10, 5, function(value) UnicornFinder.Config.MaxRetries = value end)
-tabUnicorn:NewSeparator()
-tabUnicorn:NewLabel("── Quick Actions ──")
-tabUnicorn:NewButton("Scan for Unicorn Now", function()
-    local scan = UnicornFinder:ScanForUnicorn()
-    if #scan.pets > 0 then
-        Helpers:Notify("🦄 UNICORN!", "Found " .. #scan.pets .. " Unicorn(s)!", 5)
-        UnicornFinder:TeleportTo(scan.pets[1], true)
-    elseif #scan.eggs > 0 then
-        Helpers:Notify("🥚 EGG!", "Found " .. #scan.eggs .. " potential egg(s)!", 5)
-        UnicornFinder:TeleportTo(scan.eggs[1], true)
+eggDropdownButton.MouseButton1Click:Connect(function()
+    updateEggDropdown()
+    hatcherState.eggDropdownOpen = not hatcherState.eggDropdownOpen
+    
+    if hatcherState.eggDropdownOpen then
+        eggDropdownMenu.Visible = true
+        eggDropdownMenu.Size = UDim2.new(0.6, -5, 0, math.min(150, eggDropdownLayout.AbsoluteContentSize.Y + 5))
     else
-        Helpers:Notify("Unicorn Finder", "Nothing found nearby", 3)
+        eggDropdownMenu.Visible = false
+        eggDropdownMenu.Size = UDim2.new(0.6, -5, 0, 0)
     end
 end)
-tabUnicorn:NewButton("Scan & Collect All", function()
-    local scan = UnicornFinder:ScanForUnicorn()
-    local collected = 0
-    for _, pet in ipairs(scan.pets) do
-        UnicornFinder:TeleportTo(pet, false)
-        task.wait(0.3)
-        if UnicornFinder:CollectUnicorn(pet) then collected = collected + 1 end
-        task.wait(0.5)
-    end
-    for _, egg in ipairs(scan.eggs) do
-        UnicornFinder:TeleportTo(egg, false)
-        task.wait(0.3)
-        if UnicornFinder:HatchEgg(egg) then collected = collected + 1 end
-        task.wait(1)
-    end
-    Helpers:Notify("Unicorn Finder", "Processed " .. collected .. " items", 3)
-end)
-tabUnicorn:NewSeparator()
-tabUnicorn:NewLabel("── Known Spawn Points ──")
-tabUnicorn:NewButton("Save Current Position as Spawn", function()
-    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        UnicornFinder:AddSpawnLocation(hrp.Position)
-        Helpers:Notify("Spawn Saved", "Position saved for Unicorn hunt!", 3)
-    end
-end)
-tabUnicorn:NewButton("Check All Known Spawns", function()
-    local found = UnicornFinder:CheckKnownSpawns()
-    if #found > 0 then Helpers:Notify("🦄 Found!", "Found " .. #found .. " item(s) at spawns!", 5) else Helpers:Notify("Spawn Check", "Nothing at known spawns", 3) end
-end)
-tabUnicorn:NewSeparator()
 
-local uniStatus = tabUnicorn:NewStatus("Status", "Idle")
-local uniFound = tabUnicorn:NewStatus("Total Found", "0")
-local uniCollected = tabUnicorn:NewStatus("Collected", "0")
-local uniHatched = tabUnicorn:NewStatus("Eggs Hatched", "0")
-local uniLastFound = tabUnicorn:NewStatus("Last Found", "Never")
-local uniSpawns = tabUnicorn:NewStatus("Known Spawns", "0")
-local uniSession = tabUnicorn:NewStatus("Session Time", "0s")
+-- ==================== HATCH FUNCTIONS ====================
 
-task.spawn(function()
-    while task.wait(1) do
-        local status = UnicornFinder:GetStatus()
-        if status.Searching then uniStatus:Set("🔍 SEARCHING FOR UNICORN...") uniStatus:SetColor(Color3.fromRGB(200, 100, 255))
-        else uniStatus:Set("Idle") uniStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
-        uniFound:Set(tostring(status.Found))
-        uniCollected:Set(tostring(status.Collected))
-        uniHatched:Set(tostring(status.Hatched))
-        uniSpawns:Set(tostring(status.KnownSpawns))
-        uniSession:Set(UnicornFinder:FormatTime(status.SessionTime))
-        if status.LastFound then
-            local timeAgo = math.floor(tick() - status.LastFound)
-            uniLastFound:Set(timeAgo .. "s ago")
-            uniLastFound:SetColor(Color3.fromRGB(200, 100, 255))
+local function hatchEgg(egg)
+    if not egg or not egg.Parent then return false end
+    
+    local currentTime = tick()
+    if currentTime - hatcherState.lastHatchTime < CONFIG.hatchDelay then
+        return false
+    end
+    
+    local success = false
+    
+    -- Try different methods to hatch
+    if egg:FindFirstChild("Use") then
+        pcall(function()
+            egg.Use:FireServer()
+            success = true
+        end)
+    end
+    
+    if egg:FindFirstChildOfClass("RemoteFunction") then
+        pcall(function()
+            egg:FindFirstChildOfClass("RemoteFunction"):InvokeServer()
+            success = true
+        end)
+    end
+    
+    if success then
+        hatcherState.lastHatchTime = currentTime
+        print("[Egg Hatcher] Hatched egg: " .. egg.Name)
+    end
+    
+    return success
+end
+
+local function autoHatchEggs()
+    if not hatcherState.isRunning then return end
+    
+    local eggs = getEggsInInventory()
+    
+    for _, egg in pairs(eggs) do
+        if hatcherState.isRunning then
+            -- If eggs are selected, only hatch selected ones
+            if #hatcherState.selectedEggs > 0 then
+                if table.find(hatcherState.selectedEggs, egg.Name) then
+                    hatchEgg(egg)
+                    wait(CONFIG.hatchDelay)
+                end
+            else
+                -- Hatch all eggs if none selected
+                hatchEgg(egg)
+                wait(CONFIG.hatchDelay)
+            end
         end
     end
+end
+
+-- ==================== INPUT HANDLING ====================
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == CONFIG.toggleKey then
+        hatcherState.isRunning = not hatcherState.isRunning
+        statusLabel.Text = "Status: " .. (hatcherState.isRunning and "RUNNING ✓" or "PAUSED ⏸")
+        print("[Egg Hatcher] " .. (hatcherState.isRunning and "ENABLED" or "DISABLED"))
+    end
+    
+    if input.KeyCode == CONFIG.guiToggleKey then
+        mainFrame.Visible = not mainFrame.Visible
+    end
 end)
 
--- =============================================
--- TAB 8: Settings
--- =============================================
-local tabSettings = window:CreateTab("Settings", "⚙")
-tabSettings:NewLabel("── General Settings ──")
+-- ==================== MAIN LOOP ====================
 
-local antiAfk = tabSettings:NewToggle("Anti-AFK", true, function(state) if state then Helpers:EnableAntiAFK() end end)
-local debugMode = tabSettings:NewToggle("Debug Mode", false, function(state) end)
-
-tabSettings:NewSeparator()
-tabSettings:NewLabel("── Script Info ──")
-tabSettings:NewStatus("Version", "1.3.0")
-tabSettings:NewStatus("Game", "Grow A Garden")
-tabSettings:NewStatus("Modules", "8 loaded")
-tabSettings:NewStatus("Toggle Key", "RightShift / Mobile 🌱 Button")
-
-tabSettings:NewSeparator()
-tabSettings:NewLabel("── Loaded Modules ──")
-tabSettings:NewStatus("1", "Pet Finder")
-tabSettings:NewStatus("2", "Weather Predict")
-tabSettings:NewStatus("3", "Seed Sniper")
-tabSettings:NewStatus("4", "Tame Sniper")
-tabSettings:NewStatus("5", "Raccoon Finder")
-tabSettings:NewStatus("6", "Coin Farmer")
-tabSettings:NewStatus("7", "Unicorn Finder")
-
-tabSettings:NewSeparator()
-tabSettings:NewButton("Destroy GUI", function()
-    if window.GUI then window.GUI:Destroy() end
-    if ScreenGui then ScreenGui:Destroy() end
+spawn(function()
+    while CONFIG.enabled do
+        autoHatchEggs()
+        sellButton.Text = "💰 Sell Pets (Team " .. hatcherState.activePetTeam .. ")"
+        wait(CONFIG.checkInterval)
+    end
 end)
 
-print("=== All original modules loaded perfectly with Mobile Toggle! ===")
-Helpers:Notify("Grow A Garden", "Script loaded! Tap the 🌱 Floating Button\nAll original modules are active!", 5)
+-- Initial load
+updateEggDropdown()
+
+print("[Egg Hatcher] Script loaded!")
+print("[Egg Hatcher] Press " .. tostring(CONFIG.guiToggleKey) .. " to toggle GUI")
+print("[Egg Hatcher] Press " .. tostring(CONFIG.toggleKey) .. " to toggle hatching")
+print("[Egg Hatcher] Drag the title bar to move the window!")
