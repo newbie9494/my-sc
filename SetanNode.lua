@@ -23,8 +23,12 @@ local RESTOCK_MAPPING = { ["Kepiting"] = "Kepiting", ["Sate Kepiting"] = "Sate K
 local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "PisangRajaRebus" }
 
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
-local BLINK_SPEED, POST_PANEN_DELAY, TELEPORT_DELAY = 350, 0.3, 0.35
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
+
+-- UPDATED CONFIGURATION PARAMETERS
+local BLINK_SPEED = 250
+local POST_PANEN_DELAY = 0.7
+local TELEPORT_DELAY = 0.6
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
@@ -91,8 +95,21 @@ ListContainer3.Name = "ListContainer3"; ListContainer3.Parent = ContentFrame; Li
 Instance.new("UICorner", ListContainer3).CornerRadius = UDim.new(0, 5)
 local UIListLayout3 = Instance.new("UIListLayout"); UIListLayout3.Parent = ListContainer3; UIListLayout3.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout3.Padding = UDim.new(0, 2)
 
-MiniButton.Activated:Connect(function() ContentFrame.Visible = false; MiniButton.Visible = false; MainFrame.Position = UDim2.new(0, 10, 0.4, 0); MainFrame.Size = UDim2.new(0, 100, 0, 45) end)
-TitleButton.Activated:Connect(function() if not ContentFrame.Visible then MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 220, 0, 420); ContentFrame.Visible = true; MiniButton.Visible = true end end)
+MiniButton.Activated:Connect(function() 
+    ContentFrame.Visible = false 
+    MiniButton.Visible = false 
+    MainFrame.Position = UDim2.new(0, 10, 0.4, 0) 
+    MainFrame.Size = UDim2.new(0, 100, 0, 45) 
+end)
+
+TitleButton.Activated:Connect(function() 
+    if not ContentFrame.Visible then 
+        MainFrame.Position = GLOBAL_SAVED_POS 
+        MainFrame.Size = UDim2.new(0, 220, 0, 420) 
+        ContentFrame.Visible = true 
+        MiniButton.Visible = true 
+    end 
+end)
 
 for disp, ws in pairs(TARGET_MAPPING) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 22); btn.BackgroundColor3 = Color3.fromRGB(35, 35, 40); btn.Text = disp; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 9; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
