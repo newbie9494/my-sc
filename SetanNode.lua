@@ -25,7 +25,7 @@ local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
--- UPDATED CONFIGURATION PARAMETERS (STABIL & AMAN)
+-- KONFIGURASI WAKTU SESUAI REKOMENDASI USER
 local BLINK_SPEED = 250
 local POST_PANEN_DELAY = 0.7
 local TELEPORT_DELAY = 0.6
@@ -152,11 +152,15 @@ local function blinkTravelTo(root, humanoid, targetCFrame)
     end
 end
 
--- FIXED: Memaksa tahanan jari legal selama 0.6 detik agar server mengesahkan proses panen
+-- HYBRID ACTION: Mengaktifkan ProximityPrompt lalu dipaksa menahan input jari selama 0.6 detik murni
 local function secureHoldPrompt(prompt)
     if not prompt or not prompt.Enabled then return end
+    -- Langkah 1: Aktifkan trigger bypass internal executor Delta
+    if fireproximityprompt then fireproximityprompt(prompt) end
+    task.wait(0.02)
+    -- Langkah 2: Kunci penekanan fisik terikat mesin agar server mendeteksi hold time > 0.5 detik
     prompt:InputHoldBegin()
-    task.wait(0.6) -- Memenuhi syarat minimum 0.5 detik game Pasar Hutan + toleransi ping
+    task.wait(0.6) 
     prompt:InputHoldEnd()
 end
 
