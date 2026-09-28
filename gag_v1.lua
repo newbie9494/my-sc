@@ -1,280 +1,495 @@
 -- =============================================================================
--- 🌱 GROW A GARDEN - MOBILE UTTER SCRIPT (BAGIAN 1 / 2)
--- Gabungkan Bagian 1 dan 2 ke dalam executor HP Anda sebelum dijalankan!
--- Fitur: Menggunakan Tombol Melayang (Floating Button) khusus HP.
+-- 🌱 GROW A GARDEN - INTEGRATED ALL-IN-ONE SCRIPT (SINGLE TEXT FILE)
+-- Cocok untuk Pengguna Mobile (HP) / PC.
+-- Dilengkapi Tombol Melayang [🌱] khusus Mobile (Pengganti RightShift).
 -- =============================================================================
 
-print("=== Grow A Garden Mobile Script ===")
-print("Compiling Offline Modules (Part 1/2)...")
+print("=== Grow A Garden Script ===")
+print("Loading Original Modules with Mobile Toggle...")
+
+-- 1. Memuat Pustaka Utama dan Utilitas Asli dari GitHub
+local UILibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/libs/ui_library.lua"))()
+local Helpers = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/utils/helpers.lua"))()
+
+-- 2. Memuat Seluruh 7 File Modul Logika Inti Game
+local PetFinder = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/pet_finder.lua"))()
+local WeatherPredict = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/weather_predict.lua"))()
+local SeedSniper = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/seed_sniper.lua"))()
+local PetTameSniper = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/pet_tame_sniper.lua"))()
+local RaccoonFinder = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/raccoon_finder.lua"))()
+local CoinFarmer = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/coin_farmer.lua"))()
+local UnicornFinder = loadstring(game:HttpGet("https://raw.githubusercontent.com/AUR4NK/GAG-farm-v1/main/modules/unicorn_finder.lua"))()
+
+-- Mengaktifkan Fitur Anti-AFK Bawaan
+Helpers:EnableAntiAFK()
+
+-- Membuat Kerangka Menu Utama (GUI Window)
+local window = UILibrary:CreateWindow("🌱 Grow A Garden Script")
 
 -- =============================================================================
--- 1. KONFIGURASI GLOBAL (Pengaturan Awal Otomatis)
+-- TOMBOL MELAYANG KHUSUS HP (Pengganti RightShift)
 -- =============================================================================
-local Settings = {
-    General = { AutoReconnect = true, AntiAFK = true, NotificationSound = true },
-    PetFinder = { Enabled = true, ScanRadius = 200, AutoCollect = true },
-    WeatherPredict = { Enabled = true, AutoNotify = true },
-    SeedSniper = { Enabled = true, AutoBuy = true, MaxBuy = 10 },
-    PetTameSniper = { Enabled = true, AutoHop = true, AutoTame = true },
-    CoinFarmer = {
-        Enabled = true, AutoSell = true, AutoRebirth = false, FarmMode = "all",
-        PriorityMode = "nearest", CollectRadius = 400, TeleportSpeed = 0.3,
-        SellInterval = 30, MaxCollectPerLoop = 40
-    }
-}
-
--- =============================================================================
--- 2. OFFLINE HELPERS (Fungsi Pemburu Tanpa Download Eksternal)
--- =============================================================================
-local Helpers = {}
-function Helpers:EnableAntiAFK()
-    local VirtualUser = game:GetService("VirtualUser")
-    game:GetService("Players").LocalPlayer.Idled:Connect(function()
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new(0,0))
-        print("[Anti-AFK] Mencegah karakter disconnect!")
-    end)
-end
-
-function Helpers:Notify(title, text, duration)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = duration or 3
-    })
-end
-
-if Settings.General.AntiAFK then
-    Helpers:EnableAntiAFK()
-end
-
--- =============================================================================
--- 3. INTERFACE ENGINE DENGAN TOMBOL MELAYANG HP
--- =============================================================================
--- Membuat Tombol Buka/Tutup GUI di Layar HP
 local ScreenGui = Instance.new("ScreenGui")
-local ToggleButton = Instance.new("TextButton")
+local FloatingBtn = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
 ScreenGui.Name = "GAGMobileToggle"
 ScreenGui.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
-ToggleButton.Name = "ToggleButton"
-ToggleButton.Parent = ScreenGui
-ToggleButton.BackgroundColor3 = Color3.fromRGB(34, 139, 34) -- Hijau Kebun
-ToggleButton.Position = UDim2.new(0.05, 0, 0.15, 0) -- Posisi kiri atas layar
-ToggleButton.Size = UDim2.new(0, 60, 0, 60)
-ToggleButton.Font = Enum.Font.SourceSansBold
-ToggleButton.Text = "🌱"
-ToggleButton.TextSize = 30
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Active = true
-ToggleButton.Draggable = true -- Bisa digeser-geser dengan jari di layar HP
+FloatingBtn.Name = "FloatingBtn"
+FloatingBtn.Parent = ScreenGui
+FloatingBtn.BackgroundColor3 = Color3.fromRGB(34, 139, 34)
+FloatingBtn.Position = UDim2.new(0.1, 0, 0.25, 0)
+FloatingBtn.Size = UDim2.new(0, 52, 0, 52)
+FloatingBtn.Font = Enum.Font.SourceSansBold
+FloatingBtn.Text = "🌱"
+FloatingBtn.TextSize = 26
+FloatingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FloatingBtn.Active = true
+FloatingBtn.Draggable = true
 
--- Dummy UI Library untuk emulator lokal mobile agar tidak error saat dipanggil
-local UILibrary = {}
-local window = { GUI = Instance.new("Frame") }
-function UILibrary:CreateWindow(title)
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 340, 0, 260)
-    MainFrame.Position = UDim2.new(0.5, -170, 0.5, -130)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    MainFrame.Visible = true
-    MainFrame.Parent = ScreenGui
-    window.GUI = MainFrame
-    
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Size = UDim2.new(1, 0, 0, 30)
-    TitleLabel.Text = title
-    TitleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-    TitleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-    TitleLabel.Parent = MainFrame
-    return window
-end
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = FloatingBtn
 
-function window:CreateTab(name, icon)
-    local tab = {}
-    function tab:NewLabel(text) print("Tab " .. name .. ": " .. text) end
-    function tab:NewToggle(text, default, callback) end
-    function tab:NewSlider(text, min, max, default, callback) end
-    function tab:NewDropdown(text, list, default, callback) end
-    function tab:NewButton(text, callback) end
-    function tab:NewSeparator() end
-    function tab:NewStatus(text, default) 
-        local status = {}
-        function status:Set(val) end
-        function status:SetColor(col) end
-        return status
+FloatingBtn.MouseButton1Click:Connect(function()
+    if window and window.GUI then
+        window.GUI.Visible = not window.GUI.Visible
     end
-    return tab
-end
-
--- Membuat Window Menu Utama
-window = UILibrary:CreateWindow("🌱 GAG Mobile Menu")
-
--- Fungsi saat tombol 🌱 diketuk di layar HP
-ToggleButton.MouseButton1Click:Connect(function()
-    window.GUI.Visible = not window.GUI.Visible
 end)
 
--- TAB 1: PET FINDER (Pencari Pet Sekitar)
+-- =============================================================================
+-- TAB 1: Pet Finder
+-- =============================================================================
 local tabPet = window:CreateTab("Pet Finder", "🐾")
 tabPet:NewLabel("── Pet Finder Settings ──")
--- =============================================================================
--- 🌱 GROW A GARDEN - MOBILE UTTER SCRIPT (BAGIAN 2 / 2)
--- Tempelkan bagian ini tepat di bawah baris akhir Bagian 1!
--- Bagian ini berisi kelanjutan tab menu dan sistem otomatisasi koin.
--- =============================================================================
 
-print("Compiling Offline Modules (Part 2/2)...")
+local pfToggle = tabPet:NewToggle("Auto Scan Pets", false, function(state)
+    if state then PetFinder:StartAutoScan() else PetFinder:StopAutoScan() end
+end)
+local pfCollect = tabPet:NewToggle("Auto Collect", true, function(state)
+    PetFinder.Config.AutoCollect = state
+end)
+local pfNotify = tabPet:NewToggle("Notify on Find", true, function(state)
+    PetFinder.Config.NotifyPet = state
+end)
+local pfRadius = tabPet:NewSlider("Scan Radius", 50, 500, 200, function(value)
+    PetFinder.Config.ScanRadius = value
+end)
 
--- Lanjutan TAB 1: Pembuatan Fitur Kontrol Pet Finder di Tampilan Mobile
-local pfStatusText = Instance.new("TextLabel")
-pfStatusText.Size = UDim2.new(1, -20, 0, 25)
-pfStatusText.Position = UDim2.new(0, 10, 0, 40)
-pfStatusText.Text = "Status Pet: Menunggu Auto Scan..."
-pfStatusText.TextColor3 = Color3.fromRGB(200, 200, 200)
-pfStatusText.BackgroundTransparency = 1
-pfStatusText.TextXAlignment = Enum.TextXAlignment.Left
-pfStatusText.Parent = window.GUI
+tabPet:NewSeparator()
+tabPet:NewLabel("── Quick Actions ──")
+tabPet:NewButton("Scan Once", function()
+    local pets = PetFinder:ScanPets()
+    Helpers:Notify("Pet Finder", "Found " .. #pets .. " pets", 3)
+end)
+tabPet:NewButton("Collect All Now", function() PetFinder:AutoCollectAll() end)
+tabPet:NewSeparator()
 
--- TAB 6: COIN FARMER MOBILE (Sistem Otomatisasi Koin & Token Terintegrasi)
-local tabCoin = window:CreateTab("Coin Farm", "💰")
+local pfStatus = tabPet:NewStatus("Status", "Idle")
+local pfFound = tabPet:NewStatus("Pets Found", "0")
 
-local CoinFarmerFrame = Instance.new("Frame")
-CoinFarmerFrame.Size = UDim2.new(1, -20, 1, -80)
-CoinFarmerFrame.Position = UDim2.new(0, 10, 0, 70)
-CoinFarmerFrame.BackgroundTransparency = 1
-CoinFarmerFrame.Parent = window.GUI
-
--- Tombol Mengaktifkan Auto Farm Koin di Layar HP
-local cfToggleButton = Instance.new("TextButton")
-cfToggleButton.Size = UDim2.new(1, 0, 0, 40)
-cfToggleButton.Position = UDim2.new(0, 0, 0, 0)
-cfToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah (Mati)
-cfToggleButton.Text = "Auto Farm: OFF"
-cfToggleButton.Font = Enum.Font.SourceSansBold
-cfToggleButton.TextSize = 18
-cfToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-cfToggleButton.Parent = CoinFarmerFrame
-
-local cfUICorner = Instance.new("UICorner")
-cfUICorner.CornerRadius = UDim.new(0, 8)
-cfUICorner.Parent = cfToggleButton
-
--- Label Status Pemantauan Statistik Farm Koin
-local cfStatLabel = Instance.new("TextLabel")
-cfStatLabel.Size = UDim2.new(1, 0, 0, 60)
-cfStatLabel.Position = UDim2.new(0, 0, 0, 50)
-cfStatLabel.Text = "Total Koin Didapat: 0\nStatus: Idle\nJarak Scan: " .. Settings.CoinFarmer.CollectRadius .. " Stud"
-cfStatLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-cfStatLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-cfStatLabel.TextSize = 14
-cfStatLabel.Parent = CoinFarmerFrame
-
-local cfStatCorner = Instance.new("UICorner")
-cfStatCorner.CornerRadius = UDim.new(0, 6)
-cfStatCorner.Parent = cfStatLabel
-
--- =============================================================================
--- 4. LOGIKA UTAMA OTOMATISASI GAME (LOOPING UTAMA)
--- =============================================================================
-local FarmingActive = false
-local TotalCollectedCount = 0
-
--- Fungsi Utama untuk Scan & Teleport Ambil Koin Sekitar
-local function LoopFarmCoins()
-    while FarmingActive do
-        task.wait(Settings.CoinFarmer.TeleportSpeed)
-        
-        local player = game.Players.LocalPlayer
-        local character = player.Character
-        local hrp = character and character:FindFirstChild("HumanoidRootPart")
-        
-        if hrp then
-            -- Mencari folder koin/drops di Workspace game Grow A Garden
-            local itemsFolder = workspace:FindFirstChild("Drops") or workspace:FindFirstChild("Coins") or workspace
-            local foundItems = {}
-            
-            for _, item in ipairs(itemsFolder:GetChildren()) do
-                if item:IsA("BasePart") or item:FindFirstChild("TouchInterest") or item.Name:lower():find("coin") or item.Name:lower():find("token") then
-                    local distance = (hrp.Position - item.Position).Magnitude
-                    if distance <= Settings.CoinFarmer.CollectRadius then
-                        table.insert(foundItems, {part = item, dist = distance})
-                    end
-                end
-            end
-            
-            -- Sortir koin berdasarkan yang terdekat (Nearest Mode)
-            table.sort(foundItems, function(a, b) return a.dist < b.dist end)
-            
-            -- Proses Teleportasi ke Koin (Dibatasi MaxCollectPerLoop)
-            local collectCount = 0
-            for _, info in ipairs(foundItems) do
-                if collectCount >= Settings.CoinFarmer.MaxCollectPerLoop or not FarmingActive then break end
-                
-                if info.part and info.part.Parent then
-                    cfStatLabel.Text = "Total Koin Didapat: " .. TotalCollectedCount .. "\nStatus: Mengambil Koin Terdekat...\nKecepatan: 300ms"
-                    
-                    -- Teleport langsung ke posisi koin
-                    hrp.CFrame = info.part.CFrame
-                    task.wait(0.05) -- Jeda sentuhan instan
-                    
-                    TotalCollectedCount = TotalCollectedCount + 1
-                    collectCount = collectCount + 1
-                end
-            end
-            
-            if collectCount == 0 then
-                cfStatLabel.Text = "Total Koin Didapat: " .. TotalCollectedCount .. "\nStatus: Menunggu Koin Muncul...\nRadius: " .. Settings.CoinFarmer.CollectRadius
-            end
-        end
-    end
-end
-
--- Sistem Logika Jual Otomatis (Auto Sell Loop)
 task.spawn(function()
-    while true do
-        task.wait(Settings.CoinFarmer.SellInterval)
-        if Settings.CoinFarmer.AutoSell and FarmingActive then
-            -- Mencoba memicu fungsi remote sell bawaan game jika tersedia
-            local sellRemote = game:GetService("ReplicatedStorage"):FindFirstChild("SellAll", true) or game:GetService("ReplicatedStorage"):FindFirstChild("Sell", true)
-            if sellRemote and sellRemote:IsA("RemoteEvent") then
-                sellRemote:FireServer()
-            elseif sellRemote and sellRemote:IsA("RemoteFunction") then
-                sellRemote:InvokeServer()
-            end
-            print("[Auto Sell] Menjalankan sistem auto sell otomatis setiap 30 detik.")
+    while task.wait(2) do
+        if PetFinder.Scanning then
+            pfStatus:Set("Scanning...")
+            pfStatus:SetColor(Color3.fromRGB(100, 255, 150))
+        else
+            pfStatus:Set("Idle")
+            pfStatus:SetColor(Color3.fromRGB(150, 150, 170))
+        end
+        pfFound:Set(tostring(#PetFinder.FoundPets))
+    end
+end)
+
+-- =============================================================================
+-- TAB 2: Weather Predict
+-- =============================================================================
+local tabWeather = window:CreateTab("Weather", "🌤")
+tabWeather:NewLabel("── Weather Monitor ──")
+
+local wToggle = tabWeather:NewToggle("Auto Monitor", false, function(state)
+    if state then WeatherPredict:StartMonitoring() else WeatherPredict:StopMonitoring() end
+end)
+local wNotify = tabWeather:NewToggle("Notify Changes", true, function(state) end)
+
+tabWeather:NewSeparator()
+tabWeather:NewLabel("── Weather Info ──")
+local wCurrent = tabWeather:NewStatus("Current Weather", "Unknown")
+local wMultiplier = tabWeather:NewStatus("Multiplier", "x1.0")
+local wRemaining = tabWeather:NewStatus("Time Remaining", "N/A")
+local wPredicted = tabWeather:NewStatus("Predicted Next", "N/A")
+local wConfidence = tabWeather:NewStatus("Confidence", "N/A")
+tabWeather:NewSeparator()
+
+tabWeather:NewButton("Refresh Weather", function()
+    local info = WeatherPredict:GetInfo()
+    wCurrent:Set(info.Current)
+    wMultiplier:Set("x" .. info.Multiplier)
+    wRemaining:Set(info.TimeRemaining .. "s")
+    wPredicted:Set(info.PredictedNext)
+    wConfidence:Set(info.Confidence .. "%")
+end)
+
+tabWeather:NewButton("Show Full Info", function()
+    local info = WeatherPredict:GetInfo()
+    Helpers:Notify("Weather Info", "Current: " .. info.Current .. "\nMultiplier: x" .. info.Multiplier .. "\nPredicted: " .. info.PredictedNext .. "\nConfidence: " .. info.Confidence .. "%", 8)
+end)
+
+task.spawn(function()
+    while task.wait(5) do
+        local info = WeatherPredict:GetInfo()
+        wCurrent:Set(info.Current)
+        wMultiplier:Set("x" .. info.Multiplier)
+        if info.Current ~= "Unknown" then
+            wRemaining:Set(info.TimeRemaining .. "s")
+            wPredicted:Set(info.PredictedNext)
+            wConfidence:Set(info.Confidence .. "%")
+            if info.Multiplier >= 2.0 then wMultiplier:SetColor(Color3.fromRGB(255, 100, 100))
+            elseif info.Multiplier >= 1.5 then wMultiplier:SetColor(Color3.fromRGB(255, 200, 50))
+            else wMultiplier:SetColor(Color3.fromRGB(150, 150, 170)) end
         end
     end
 end)
 
--- Aksi Trigger ketika Tombol Auto Farm Diketuk di HP
-cfToggleButton.MouseButton1Click:Connect(function()
-    FarmingActive = not FarmingActive
-    if FarmingActive then
-        cfToggleButton.BackgroundColor3 = Color3.fromRGB(34, 139, 34) -- Hijau (Aktif)
-        cfToggleButton.Text = "Auto Farm: ON"
-        Helpers:Notify("Coin Farmer", "Auto Farm Koin Berhasil Diaktifkan! 💰", 3)
-        task.spawn(LoopFarmCoins)
-    else
-        cfToggleButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50) -- Merah (Mati)
-        cfToggleButton.Text = "Auto Farm: OFF"
-        cfStatLabel.Text = "Total Koin Didapat: " .. TotalCollectedCount .. "\nStatus: Idle\nJarak Scan: " .. Settings.CoinFarmer.CollectRadius .. " Stud"
-        Helpers:Notify("Coin Farmer", "Auto Farm Dinonaktifkan.", 2)
+-- =============================================================================
+-- TAB 3: Seed Sniper
+-- =============================================================================
+local tabSeed = window:CreateTab("Seed Sniper", "🌱")
+tabSeed:NewLabel("── Seed Sniper Settings ──")
+
+local ssToggle = tabSeed:NewToggle("Auto Snipe", false, function(state)
+    if state then SeedSniper:StartSniping() else SeedSniper:StopSniping() end
+end)
+local ssBuy = tabSeed:NewToggle("Auto Buy", true, function(state) SeedSniper.Config.AutoBuy = state end)
+local ssRare = tabSeed:NewToggle("Rare Only", false, function(state) SeedSniper.Config.RareOnly = state end)
+local ssMaxBuy = tabSeed:NewSlider("Max Buy Per Seed", 1, 50, 10, function(value) SeedSniper.Config.MaxBuyAmount = value end)
+local ssDelay = tabSeed:NewSlider("Buy Delay (ms)", 100, 2000, 500, function(value) SeedSniper.Config.DelayBetweenBuy = value / 1000 end)
+
+tabSeed:NewSeparator()
+tabSeed:NewLabel("── Quick Actions ──")
+tabSeed:NewButton("Check Shop Now", function()
+    local seeds = SeedSniper:CheckSeedShop()
+    Helpers:Notify("Seed Shop", "Found " .. #seeds .. " available seeds", 3)
+end)
+tabSeed:NewButton("Snipe All Now", function()
+    local bought = SeedSniper:SnipeAll()
+    Helpers:Notify("Seed Sniper", "Sniped " .. bought .. " seeds!", 3)
+end)
+tabSeed:NewSeparator()
+
+local ssStatus = tabSeed:NewStatus("Status", "Idle")
+local ssAvail = tabSeed:NewStatus("Available Seeds", "0")
+local ssBought = tabSeed:NewStatus("Total Purchased", "0")
+
+task.spawn(function()
+    while task.wait(2) do
+        if SeedSniper.Sniping then ssStatus:Set("Sniping...") ssStatus:SetColor(Color3.fromRGB(100, 255, 150))
+        else ssStatus:Set("Idle") ssStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
+        ssAvail:Set(tostring(#SeedSniper.AvailableSeeds))
+        ssBought:Set(tostring(#SeedSniper.PurchasedSeeds))
     end
 end)
 
--- TAB 8: INFO PENUTUP MOBILE
-local InfoLabel = Instance.new("TextLabel")
-InfoLabel.Size = UDim2.new(1, 0, 0, 20)
-InfoLabel.Position = UDim2.new(0, 0, 1, -25)
-InfoLabel.Text = "Versi Mobile 1.3.0 | Seret tombol [🌱] untuk pindah posisi"
-InfoLabel.TextSize = 11
-InfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-InfoLabel.BackgroundTransparency = 1
-InfoLabel.Parent = window.GUI
+-- =============================================================================
+-- TAB 4: Pet Tame Sniper
+-- =============================================================================
+local tabTame = window:CreateTab("Tame Sniper", "🐾")
+tabTame:NewLabel("── Tame Sniper Settings ──")
 
--- Selesai Kompilasi
-print("=== Grow A Garden Mobile Single Script Fully Compiled! ===")
-Helpers:Notify("Grow A Garden Mobile", "Script Berhasil Dimuat!\nKetuk ikon [🌱] di kiri atas layar untuk membuka menu!", 5)
+local tsToggle = tabTame:NewToggle("Auto Snipe Tame", false, function(state)
+    if state then PetTameSniper:StartSniping() else PetTameSniper:StopSniping() end
+end)
+local tsHop = tabTame:NewToggle("Auto Server Hop", true, function(state) PetTameSniper.Config.AutoHop = state end)
+local tsAutoTame = tabTame:NewToggle("Auto Tame", true, function(state) PetTameSniper.Config.AutoTame = state end)
+local tsRadius = tabTame:NewSlider("Scan Radius", 50, 500, 300, function(value) PetTameSniper.Config.ScanRadius = value end)
+local tsMaxTame = tabTame:NewSlider("Max Tame/Server", 1, 20, 5, function(value) PetTameSniper.Config.MaxTamePerServer = value end)
+local tsHopDelay = tabTame:NewSlider("Hop Delay (s)", 1, 10, 3, function(value) PetTameSniper.Config.HopDelay = value end)
+local tsMode = tabTame:NewDropdown("Server Hop Mode", {"random", "low"}, "random", function(value) PetTameSniper.Config.ServerHopMode = value end)
+
+tabTame:NewSeparator()
+tabTame:NewLabel("── Quick Actions ──")
+tabTame:NewButton("Scan & Tame Now", function()
+    local tamed = PetTameSniper:ScanAndTame()
+    Helpers:Notify("Tame Sniper", "Tamed " .. tamed .. " pets!", 3)
+end)
+tabTame:NewButton("Hop Server Now", function() PetTameSniper:HopServer() end)
+tabTame:NewSeparator()
+
+local tsStatus = tabTame:NewStatus("Status", "Idle")
+local tsServers = tabTame:NewStatus("Servers Visited", "0")
+local tsTotal = tabTame:NewStatus("Total Tamed", "0")
+local tsFound = tabTame:NewStatus("Pets Found", "0")
+
+task.spawn(function()
+    while task.wait(2) do
+        if PetTameSniper.Sniping then tsStatus:Set("Sniping...") tsStatus:SetColor(Color3.fromRGB(100, 255, 150))
+        else tsStatus:Set("Idle") tsStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
+        tsServers:Set(tostring(PetTameSniper.ServersVisited))
+        tsTotal:Set(tostring(PetTameSniper.TotalTamed))
+        tsFound:Set(tostring(#PetTameSniper.FoundPets))
+    end
+end)
+
+-- =============================================================================
+-- TAB 5: Raccoon Finder
+-- =============================================================================
+local tabRaccoon = window:CreateTab("Raccoon", "🦝")
+tabRaccoon:NewLabel("── 🦝 RACCOON FINDER ──")
+tabRaccoon:NewLabel("Specialized Raccoon Detection")
+
+local rcToggle = tabRaccoon:NewToggle("Auto Find Raccoon", false, function(state)
+    if state then RaccoonFinder:StartSearching() else RaccoonFinder:StopSearching() end
+end)
+local rcAutoCollect = tabRaccoon:NewToggle("Auto Collect", true, function(state) RaccoonFinder.Config.AutoCollect = state end)
+local rcAutoTP = tabRaccoon:NewToggle("Auto Teleport", true, function(state) RaccoonFinder.Config.AutoTeleport = state end)
+local rcNotify = tabRaccoon:NewToggle("Sound Notification", true, function(state) RaccoonFinder.Config.NotifySound = state end)
+local rcRadius = tabRaccoon:NewSlider("Scan Radius", 100, 1000, 500, function(value) RaccoonFinder.Config.ScanRadius = value end)
+local rcInterval = tabRaccoon:NewSlider("Scan Interval (ms)", 500, 5000, 1000, function(value) RaccoonFinder.Config.ScanInterval = value / 1000 end)
+
+tabRaccoon:NewSeparator()
+tabRaccoon:NewLabel("── Quick Actions ──")
+tabRaccoon:NewButton("Scan Now", function()
+    local raccoons = RaccoonFinder:ScanForRaccoon()
+    if #raccoons > 0 then
+        Helpers:Notify("🦝 RACCOON!", "Found " .. #raccoons .. " Raccoon(s)!", 5)
+        RaccoonFinder:TeleportToRaccoon(raccoons[1], true)
+    else
+        Helpers:Notify("Raccoon Finder", "No Raccoon found nearby", 3)
+    end
+end)
+tabRaccoon:NewButton("Scan & Collect All", function()
+    local raccoons = RaccoonFinder:ScanForRaccoon()
+    for _, rac in ipairs(raccoons) do
+        RaccoonFinder:TeleportToRaccoon(rac, false)
+        task.wait(0.3)
+        RaccoonFinder:CollectRaccoon(rac)
+        task.wait(0.5)
+    end
+    Helpers:Notify("Raccoon Finder", "Processed " .. #raccoons .. " Raccoon(s)", 3)
+end)
+tabRaccoon:NewSeparator()
+tabRaccoon:NewLabel("── Known Spawn Points ──")
+tabRaccoon:NewButton("Save Current Position as Spawn", function()
+    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        RaccoonFinder:AddSpawnLocation(hrp.Position)
+        Helpers:Notify("Spawn Saved", "Position: " .. tostring(hrp.Position), 3)
+    end
+end)
+tabRaccoon:NewButton("Check All Known Spawns", function()
+    local found = RaccoonFinder:CheckKnownSpawns()
+    Helpers:Notify("Spawn Check", "Found " .. #found .. " Raccoon(s) at known spawns", 3)
+end)
+tabRaccoon:NewSeparator()
+
+local rcStatus = tabRaccoon:NewStatus("Status", "Idle")
+local rcFound = tabRaccoon:NewStatus("Total Found", "0")
+local rcCollected = tabRaccoon:NewStatus("Collected", "0")
+local rcLastFound = tabRaccoon:NewStatus("Last Found", "Never")
+local rcSpawns = tabRaccoon:NewStatus("Known Spawns", "0")
+
+task.spawn(function()
+    while task.wait(1) do
+        local status = RaccoonFinder:GetStatus()
+        if status.Searching then rcStatus:Set("🔍 SEARCHING...") rcStatus:SetColor(Color3.fromRGB(255, 100, 100))
+        else rcStatus:Set("Idle") rcStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
+        rcFound:Set(tostring(status.Found))
+        rcCollected:Set(tostring(status.Collected))
+        rcSpawns:Set(tostring(status.KnownSpawns))
+        if status.LastFound then
+            local timeAgo = math.floor(tick() - status.LastFound)
+            rcLastFound:Set(timeAgo .. "s ago")
+            rcLastFound:SetColor(Color3.fromRGB(100, 255, 150))
+        end
+    end
+end)
+
+-- =============================================
+-- TAB 6: Coin Farmer
+-- =============================================
+local tabCoin = window:CreateTab("Coin Farm", "💰")
+tabCoin:NewLabel("── 💰 COIN/TOKEN FARMER ──")
+tabCoin:NewLabel("Auto Farm Coins & Tokens")
+
+local cfToggle = tabCoin:NewToggle("Auto Farm", false, function(state)
+    if state then CoinFarmer:StartFarming() else CoinFarmer:StopFarming() end
+end)
+local cfAutoSell = tabCoin:NewToggle("Auto Sell", true, function(state) CoinFarmer.Config.AutoSell = state end)
+local cfAutoRebirth = tabCoin:NewToggle("Auto Rebirth", false, function(state) CoinFarmer.Config.AutoRebirth = state end)
+tabCoin:NewSeparator()
+tabCoin:NewLabel("── Farm Settings ──")
+local cfMode = tabCoin:NewDropdown("Farm Mode", {"all", "coins", "tokens"}, "all", function(value) CoinFarmer.Config.FarmMode = value end)
+local cfPriority = tabCoin:NewDropdown("Priority", {"nearest", "highest", "farthest"}, "nearest", function(value) CoinFarmer.Config.PriorityMode = value end)
+local cfRadius = tabCoin:NewSlider("Collect Radius", 50, 1000, 500, function(value) CoinFarmer.Config.CollectRadius = value end)
+local cfSpeed = tabCoin:NewSlider("Teleport Speed (ms)", 50, 1000, 300, function(value) CoinFarmer.Config.TeleportSpeed = value / 1000 end)
+local cfSellInterval = tabCoin:NewSlider("Sell Interval (s)", 10, 120, 30, function(value) CoinFarmer.Config.SellInterval = value end)
+local cfMaxCollect = tabCoin:NewSlider("Max Collect/Loop", 10, 100, 50, function(value) CoinFarmer.Config.MaxCollectPerLoop = value end)
+tabCoin:NewSeparator()
+tabCoin:NewLabel("── Quick Actions ──")
+tabCoin:NewButton("Sell All Now", function()
+    local success = CoinFarmer:AutoSell()
+    if success then Helpers:Notify("💰 Sell", "Sold all items!", 3) else Helpers:Notify("💰 Sell", "No sell method found", 3) end
+end)
+tabCoin:NewButton("Farm Once (Quick)", function()
+    local found = CoinFarmer:ScanCollectibles()
+    local total = #found.coins + #found.tokens
+    if total > 0 then
+        local collected = CoinFarmer:CollectAll(found)
+        Helpers:Notify("💰 Farm", "Collected " .. collected .. " items!", 3)
+    else
+        Helpers:Notify("💰 Farm", "No items found nearby", 3)
+    end
+end)
+tabCoin:NewSeparator()
+
+local cfStatus = tabCoin:NewStatus("Status", "Idle")
+local cfTotal = tabCoin:NewStatus("Total Collected", "0")
+local cfCoins = tabCoin:NewStatus("Coins", "0")
+local cfTokens = tabCoin:NewStatus("Tokens", "0")
+local cfRate = tabCoin:NewStatus("Coins/Min", "0")
+local cfTime = tabCoin:NewStatus("Session Time", "0s")
+local cfNextSell = tabCoin:NewStatus("Next Sell In", "N/A")
+
+task.spawn(function()
+    while task.wait(1) do
+        local status = CoinFarmer:GetStatus()
+        if status.Farming then cfStatus:Set("💰 FARMING...") cfStatus:SetColor(Color3.fromRGB(255, 200, 50))
+        else cfStatus:Set("Idle") cfStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
+        cfTotal:Set(tostring(status.TotalCollected))
+        cfCoins:Set(tostring(status.TotalCoins))
+        cfTokens:Set(tostring(status.TotalTokens))
+        cfRate:Set(tostring(status.CoinsPerMinute))
+        cfTime:Set(CoinFarmer:FormatTime(status.SessionTime))
+        if status.LastSell then
+            local nextSell = math.max(CoinFarmer.Config.SellInterval - status.LastSell, 0)
+            cfNextSell:Set(nextSell .. "s")
+        end
+    end
+end)
+
+-- =============================================
+-- TAB 7: Unicorn Finder
+-- =============================================
+local tabUnicorn = window:CreateTab("Unicorn", "🦄")
+tabUnicorn:NewLabel("── 🦄 UNICORN FINDER ──")
+tabUnicorn:NewLabel("Find & Hatch Unicorn Pets")
+
+local uniToggle = tabUnicorn:NewToggle("Auto Find Unicorn", false, function(state)
+    if state then UnicornFinder:StartSearching() else UnicornFinder:StopSearching() end
+end)
+local uniAutoCollect = tabUnicorn:NewToggle("Auto Collect", true, function(state) UnicornFinder.Config.AutoCollect = state end)
+local uniAutoTP = tabUnicorn:NewToggle("Auto Teleport", true, function(state) UnicornFinder.Config.AutoTeleport = state end)
+local uniAutoHatch = tabUnicorn:NewToggle("Auto Hatch Eggs", true, function(state) UnicornFinder.Config.AutoHatch = state end)
+local uniNotify = tabUnicorn:NewToggle("Sound Notification", true, function(state) UnicornFinder.Config.NotifySound = state end)
+local uniVisual = tabUnicorn:NewToggle("Visual Notification", true, function(state) UnicornFinder.Config.NotifyVisual = state end)
+tabUnicorn:NewSeparator()
+tabUnicorn:NewLabel("── Scan Settings ──")
+local uniRadius = tabUnicorn:NewSlider("Scan Radius", 100, 1500, 600, function(value) UnicornFinder.Config.ScanRadius = value end)
+local uniInterval = tabUnicorn:NewSlider("Scan Interval (ms)", 500, 5000, 1000, function(value) UnicornFinder.Config.ScanInterval = value / 1000 end)
+local uniRetries = tabUnicorn:NewSlider("Max Retries", 1, 10, 5, function(value) UnicornFinder.Config.MaxRetries = value end)
+tabUnicorn:NewSeparator()
+tabUnicorn:NewLabel("── Quick Actions ──")
+tabUnicorn:NewButton("Scan for Unicorn Now", function()
+    local scan = UnicornFinder:ScanForUnicorn()
+    if #scan.pets > 0 then
+        Helpers:Notify("🦄 UNICORN!", "Found " .. #scan.pets .. " Unicorn(s)!", 5)
+        UnicornFinder:TeleportTo(scan.pets[1], true)
+    elseif #scan.eggs > 0 then
+        Helpers:Notify("🥚 EGG!", "Found " .. #scan.eggs .. " potential egg(s)!", 5)
+        UnicornFinder:TeleportTo(scan.eggs[1], true)
+    else
+        Helpers:Notify("Unicorn Finder", "Nothing found nearby", 3)
+    end
+end)
+tabUnicorn:NewButton("Scan & Collect All", function()
+    local scan = UnicornFinder:ScanForUnicorn()
+    local collected = 0
+    for _, pet in ipairs(scan.pets) do
+        UnicornFinder:TeleportTo(pet, false)
+        task.wait(0.3)
+        if UnicornFinder:CollectUnicorn(pet) then collected = collected + 1 end
+        task.wait(0.5)
+    end
+    for _, egg in ipairs(scan.eggs) do
+        UnicornFinder:TeleportTo(egg, false)
+        task.wait(0.3)
+        if UnicornFinder:HatchEgg(egg) then collected = collected + 1 end
+        task.wait(1)
+    end
+    Helpers:Notify("Unicorn Finder", "Processed " .. collected .. " items", 3)
+end)
+tabUnicorn:NewSeparator()
+tabUnicorn:NewLabel("── Known Spawn Points ──")
+tabUnicorn:NewButton("Save Current Position as Spawn", function()
+    local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        UnicornFinder:AddSpawnLocation(hrp.Position)
+        Helpers:Notify("Spawn Saved", "Position saved for Unicorn hunt!", 3)
+    end
+end)
+tabUnicorn:NewButton("Check All Known Spawns", function()
+    local found = UnicornFinder:CheckKnownSpawns()
+    if #found > 0 then Helpers:Notify("🦄 Found!", "Found " .. #found .. " item(s) at spawns!", 5) else Helpers:Notify("Spawn Check", "Nothing at known spawns", 3) end
+end)
+tabUnicorn:NewSeparator()
+
+local uniStatus = tabUnicorn:NewStatus("Status", "Idle")
+local uniFound = tabUnicorn:NewStatus("Total Found", "0")
+local uniCollected = tabUnicorn:NewStatus("Collected", "0")
+local uniHatched = tabUnicorn:NewStatus("Eggs Hatched", "0")
+local uniLastFound = tabUnicorn:NewStatus("Last Found", "Never")
+local uniSpawns = tabUnicorn:NewStatus("Known Spawns", "0")
+local uniSession = tabUnicorn:NewStatus("Session Time", "0s")
+
+task.spawn(function()
+    while task.wait(1) do
+        local status = UnicornFinder:GetStatus()
+        if status.Searching then uniStatus:Set("🔍 SEARCHING FOR UNICORN...") uniStatus:SetColor(Color3.fromRGB(200, 100, 255))
+        else uniStatus:Set("Idle") uniStatus:SetColor(Color3.fromRGB(150, 150, 170)) end
+        uniFound:Set(tostring(status.Found))
+        uniCollected:Set(tostring(status.Collected))
+        uniHatched:Set(tostring(status.Hatched))
+        uniSpawns:Set(tostring(status.KnownSpawns))
+        uniSession:Set(UnicornFinder:FormatTime(status.SessionTime))
+        if status.LastFound then
+            local timeAgo = math.floor(tick() - status.LastFound)
+            uniLastFound:Set(timeAgo .. "s ago")
+            uniLastFound:SetColor(Color3.fromRGB(200, 100, 255))
+        end
+    end
+end)
+
+-- =============================================
+-- TAB 8: Settings
+-- =============================================
+local tabSettings = window:CreateTab("Settings", "⚙")
+tabSettings:NewLabel("── General Settings ──")
+
+local antiAfk = tabSettings:NewToggle("Anti-AFK", true, function(state) if state then Helpers:EnableAntiAFK() end end)
+local debugMode = tabSettings:NewToggle("Debug Mode", false, function(state) end)
+
+tabSettings:NewSeparator()
+tabSettings:NewLabel("── Script Info ──")
+tabSettings:NewStatus("Version", "1.3.0")
+tabSettings:NewStatus("Game", "Grow A Garden")
+tabSettings:NewStatus("Modules", "8 loaded")
+tabSettings:NewStatus("Toggle Key", "RightShift / Mobile 🌱 Button")
+
+tabSettings:NewSeparator()
+tabSettings:NewLabel("── Loaded Modules ──")
+tabSettings:NewStatus("1", "Pet Finder")
+tabSettings:NewStatus("2", "Weather Predict")
+tabSettings:NewStatus("3", "Seed Sniper")
+tabSettings:NewStatus("4", "Tame Sniper")
+tabSettings:NewStatus("5", "Raccoon Finder")
+tabSettings:NewStatus("6", "Coin Farmer")
+tabSettings:NewStatus("7", "Unicorn Finder")
+
+tabSettings:NewSeparator()
+tabSettings:NewButton("Destroy GUI", function()
+    if window.GUI then window.GUI:Destroy() end
+    if ScreenGui then ScreenGui:Destroy() end
+end)
+
+print("=== All original modules loaded perfectly with Mobile Toggle! ===")
+Helpers:Notify("Grow A Garden", "Script loaded! Tap the 🌱 Floating Button\nAll original modules are active!", 5)
