@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 1 ]]
+-- [[ ALIT HUB V3 - STATE MACHINE SLOT LOCK - PART 1 ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -25,6 +25,14 @@ local FIXED_RBXL_SLOTS = {
     "slot7", "slot8", "slot9", "slot10", "slot11", "slot12"
 }
 
+-- SISTEM ENUM STATUS SESUAI DOKUMEN ANALISIS USER
+local TrayState = { EMPTY = 0, RESERVED = 1, FILLED = 2 }
+local GlobalSlotStates = {} -- Menyimpan status runtime memori (1-12)
+
+for _, slotName in ipairs(FIXED_RBXL_SLOTS) do
+    GlobalSlotStates[slotName] = TrayState.EMPTY
+end
+
 local AutoDetectedTools = {}      
 local AutoDetectedRawNames = {}   
 local SlotSpecificTargets = {} 
@@ -40,13 +48,13 @@ local TEXT_DARK = Color3.fromRGB(200, 200, 200)
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
-
+-- [[ ALIT HUB V3 - STATE MACHINE SLOT LOCK - PART 2 ]]
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.BackgroundColor3 = BG_COLOR
 MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 350, 0, 220); MainFrame.BorderSizePixel = 1; MainFrame.BorderColor3 = ACCENT_GOLD
 MainFrame.ClipsDescendants = true; MainFrame.Active = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
--- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 2 ]]
+
 local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 35)
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "TitleLabel"; TitleLabel.Parent = TopBar; TitleLabel.BackgroundTransparency = 1; TitleLabel.Position = UDim2.new(0, 12, 0, 0); TitleLabel.Size = UDim2.new(0, 150, 0, 35)
@@ -73,7 +81,7 @@ Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 5)
 
 MiniButton.Activated:Connect(function() GLOBAL_SAVED_POS = MainFrame.Position; MainFrame.Visible = false; OpenButton.Visible = true end)
 OpenButton.Activated:Connect(function() OpenButton.Visible = false; MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Visible = true end)
-
+-- [[ ALIT HUB V3 - STATE MACHINE SLOT LOCK - PART 3 ]]
 for i, tabName in ipairs(SidebarButtons) do
     local sBtn = Instance.new("TextButton")
     sBtn.Name = tabName .. "Btn"; sBtn.Parent = LeftSidebar; sBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); sBtn.Size = UDim2.new(1, -8, 0, 30); sBtn.Font = Enum.Font.GothamBold; sBtn.Text = tabName; sBtn.TextColor3 = Color3.fromRGB(200, 200, 200); sBtn.TextSize = 8; Instance.new("UICorner", sBtn).CornerRadius = UDim.new(0, 4)
@@ -85,7 +93,7 @@ for i, tabName in ipairs(SidebarButtons) do
     end)
     if i == 1 then sBtn.TextColor3 = ACCENT_GOLD; sBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 20) end
 end
--- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 3 ]]
+
 local ToggleButton = Instance.new("TextButton"); ToggleButton.Size = UDim2.new(1, 0, 0, 28); ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM SYSTEM: OFF"; ToggleButton.TextColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.TextSize = 9; ToggleButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 4)
 local DropdownButton = Instance.new("TextButton"); DropdownButton.Position = UDim2.new(0, 0, 0, 34); DropdownButton.Size = UDim2.new(1, 0, 0, 24); DropdownButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "SELECT TARGETS ▼"; DropdownButton.TextColor3 = TEXT_DARK; DropdownButton.TextSize = 9; DropdownButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 4)
 local ListContainer = Instance.new("ScrollingFrame"); ListContainer.Position = UDim2.new(0, 0, 0, 62); ListContainer.Size = UDim2.new(1, 0, 1, -62); ListContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 2; ListContainer.Visible = false; ListContainer.Parent = SubFrames["AUTO FARM"]
@@ -97,7 +105,7 @@ for disp, ws in pairs(TARGET_MAPPING) do
 end
 ListContainer.CanvasSize = UDim2.new(0, 0, 0, 130)
 DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "SELECT TARGETS ▲" or "SELECT TARGETS ▼" end)
-
+-- [[ ALIT HUB V3 - STATE MACHINE SLOT LOCK - PART 4 ]]
 local RestockButton = Instance.new("TextButton"); RestockButton.Size = UDim2.new(1, 0, 0, 28); RestockButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "RESTOCK KIOS: OFF"; RestockButton.TextColor3 = Color3.fromRGB(220, 53, 69); RestockButton.TextSize = 9; RestockButton.Parent = SubFrames["AUTO STOCK"]; Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 4)
 local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "MasterScroll"; MasterScroll.Position = UDim2.new(0, 0, 0, 34); MasterScroll.Size = UDim2.new(1, 0, 1, -38); MasterScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 10); MasterScroll.BorderSizePixel = 0; MasterScroll.ScrollBarThickness = 3; MasterScroll.Parent = SubFrames["AUTO STOCK"]
 local UIMasterLayout = Instance.new("UIListLayout"); UIMasterLayout.Parent = MasterScroll; UIMasterLayout.Padding = UDim.new(0, 4)
@@ -127,7 +135,7 @@ local function ScanCurrentInventory()
     if bp then for _, t in pairs(bp:GetChildren()) do check(t) end end
     if char then for _, t in pairs(char:GetChildren()) do check(t) end end
 end
--- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 4 ]]
+
 local function BuildMultiRakUI()
     for _, child in pairs(MasterScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
     ScanCurrentInventory()
@@ -140,30 +148,21 @@ local function BuildMultiRakUI()
             local slotObj = myKios:FindFirstChild(sName) or myKios:FindFirstChild("slot " .. string.match(sName, "%d+"))
             if slotObj then
                 if not SlotSpecificTargets[sName] then SlotSpecificTargets[sName] = "" end
-                
                 local rowFrame = Instance.new("Frame"); rowFrame.Size = UDim2.new(1, -4, 0, 32); rowFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); rowFrame.Parent = MasterScroll; Instance.new("UICorner", rowFrame).CornerRadius = UDim.new(0, 4)
                 local rLabel = Instance.new("TextLabel"); rLabel.Size = UDim2.new(0, 60, 1, 0); rLabel.Position = UDim2.new(0, 6, 0, 0); rLabel.BackgroundTransparency = 1; rLabel.Font = Enum.Font.GothamBold; rLabel.Text = string.upper(sName); rLabel.TextColor3 = Color3.fromRGB(200, 200, 200); rLabel.TextSize = 8; rLabel.TextXAlignment = Enum.TextXAlignment.Left; rLabel.Parent = rowFrame
                 local rDrop = Instance.new("TextButton"); rDrop.Size = UDim2.new(1, -70, 0, 20); rDrop.Position = UDim2.new(0, 64, 0, 6); rDrop.BackgroundColor3 = Color3.fromRGB(30, 30, 30); rDrop.Font = Enum.Font.GothamSemibold; rDrop.Text = SlotSpecificTargets[sName] ~= "" and SlotSpecificTargets[sName] or "NONE ▼"; rDrop.TextColor3 = ACCENT_GOLD; rDrop.TextSize = 7; rDrop.Parent = rowFrame; Instance.new("UICorner", rDrop).CornerRadius = UDim.new(0, 4)
-                
                 local subContainer = Instance.new("ScrollingFrame"); subContainer.Size = UDim2.new(1, -10, 0, 50); subContainer.Position = UDim2.new(0, 5, 0, 28); subContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 15); subContainer.ZIndex = 5; subContainer.Visible = false; subContainer.ScrollBarThickness = 2; subContainer.Parent = rowFrame; Instance.new("UIListLayout", subContainer).Padding = UDim.new(0, 2)
                 
                 rDrop.Activated:Connect(function() 
                     if not subContainer.Visible then
                         for _, c in pairs(subContainer:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
                         ScanCurrentInventory()
-                        
                         local noneBtn = Instance.new("TextButton"); noneBtn.Size = UDim2.new(1, 0, 0, 14); noneBtn.BackgroundColor3 = Color3.fromRGB(25, 15, 15); noneBtn.Text = "  NONE"; noneBtn.TextColor3 = Color3.fromRGB(220, 53, 69); noneBtn.Font = Enum.Font.GothamSemibold; noneBtn.TextSize = 7; noneBtn.TextXAlignment = Enum.TextXAlignment.Left; noneBtn.ZIndex = 6; noneBtn.Parent = subContainer; Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 4)
                         noneBtn.Activated:Connect(function() SlotSpecificTargets[sName] = ""; rDrop.Text = "NONE ▼"; subContainer.Visible = false; rowFrame.Size = UDim2.new(1, -4, 0, 32) end)
-                        
                         for _, tName in ipairs(AutoDetectedTools) do
                             local tBtn = Instance.new("TextButton"); tBtn.Size = UDim2.new(1, 0, 0, 14); tBtn.Font = Enum.Font.GothamSemibold; tBtn.TextSize = 7; tBtn.TextXAlignment = Enum.TextXAlignment.Left; tBtn.ZIndex = 6; tBtn.Parent = subContainer; Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 4)
                             tBtn.Text = "  " .. tName
-                            
-                            if SlotSpecificTargets[sName] == tName then
-                                tBtn.TextColor3 = Color3.fromRGB(15, 15, 15); tBtn.BackgroundColor3 = ACCENT_GOLD
-                            else
-                                tBtn.TextColor3 = Color3.fromRGB(200, 200, 200); tBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-                            end
+                            if SlotSpecificTargets[sName] == tName then tBtn.TextColor3 = Color3.fromRGB(15, 15, 15); tBtn.BackgroundColor3 = ACCENT_GOLD else tBtn.TextColor3 = Color3.fromRGB(200, 200, 200); tBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25) end
                             tBtn.Activated:Connect(function() SlotSpecificTargets[sName] = tName; rDrop.Text = tName .. " ▼"; subContainer.Visible = false; rowFrame.Size = UDim2.new(1, -4, 0, 32) end)
                         end
                         subContainer.CanvasSize = UDim2.new(0, 0, 0, (#AutoDetectedTools + 1) * 16)
@@ -175,26 +174,13 @@ local function BuildMultiRakUI()
     end
     MasterScroll.CanvasSize = UDim2.new(0, 0, 0, #FIXED_RBXL_SLOTS * 36)
 end
-
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
--- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 5 ]]
+-- [[ ALIT HUB V3 - STATE MACHINE SLOT LOCK - PART 5 ]]
 local function checkItemInBackpackClean(cleanName)
     local bp = LocalPlayer:FindFirstChild("Backpack")
     local char = LocalPlayer.Character
-    if bp then
-        for _, t in pairs(bp:GetChildren()) do
-            local c = string.gsub(t.Name, "%s+x%d+", "")
-            c = string.gsub(c, "%s+$", "")
-            if c == cleanName then return true end
-        end
-    end
-    if char then
-        for _, t in pairs(char:GetChildren()) do
-            local c = string.gsub(t.Name, "%s+x%d+", "")
-            c = string.gsub(c, "%s+$", "")
-            if c == cleanName then return true end
-        end
-    end
+    if bp then for _, t in pairs(bp:GetChildren()) do local c = string.gsub(t.Name, "%s+x%d+", ""); c = string.gsub(c, "%s+$", ""); if c == cleanName then return true end end end
+    if char then for _, t in pairs(char:GetChildren()) do local c = string.gsub(t.Name, "%s+x%d+", ""); c = string.gsub(c, "%s+$", ""); if c == cleanName then return true end end end
     return false
 end
 
@@ -203,15 +189,8 @@ local function equipItemClean(cleanName)
     local char = LocalPlayer.Character
     if bp and char then
         local targetRawName = ""
-        for _, t in pairs(bp:GetChildren()) do
-            local c = string.gsub(t.Name, "%s+x%d+", "")
-            c = string.gsub(c, "%s+$", "")
-            if c == cleanName then targetRawName = t.Name; break end
-        end
-        if targetRawName ~= "" then
-            local tool = bp:FindFirstChild(targetRawName)
-            if tool and char:FindFirstChildOfClass("Humanoid") then char.Humanoid:EquipTool(tool); return true end
-        end
+        for _, t in pairs(bp:GetChildren()) do local c = string.gsub(t.Name, "%s+x%d+", ""); c = string.gsub(c, "%s+$", ""); if c == cleanName then targetRawName = t.Name; break end end
+        if targetRawName ~= "" then local tool = bp:FindFirstChild(targetRawName); if tool and char:FindFirstChildOfClass("Humanoid") then char.Humanoid:EquipTool(tool); return true end end
     end
     return false
 end
@@ -228,6 +207,21 @@ local function executePerfectHarvest(prompt)
     task.wait(MASA_TUNGGU)
 end
 
+-- [[ FUNGSI UTAMA PEMERIKSA KONDISI NAMPAN SESUAI FORMULA AKURAT USER ]]
+local function IsTrayEmptyIndependent(slotObj)
+    if not slotObj then return true end
+    local stokFolder = slotObj:FindFirstChild("Stok")
+    if not stokFolder then return true end
+    
+    -- Memeriksa keberadaan murni objek IntValue di dalam folder Stok Anda
+    for _, item in ipairs(stokFolder:GetChildren()) do
+        if item:IsA("IntValue") and item.Value > 0 then
+            return false -- Nampan terdeteksi FILLED (Ada isinya)
+        end
+    end
+    return true -- Nampan terdeteksi KOSONG MURNI
+end
+
 local dragToggle, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end) end end)
 MainFrame.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
@@ -237,12 +231,14 @@ local floatToggle, floatStart, floatStartPos
 OpenButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then floatToggle = true; floatStart = input.Position; floatStartPos = OpenButton.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then floatToggle = false end end) end end)
 game:GetService("UserInputService").InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then if floatToggle then local delta = input.Position - floatStart; OpenButton.Position = UDim2.new(floatStartPos.X.Scale, floatStartPos.X.Offset + delta.X, floatStartPos.Y.Scale, floatStartPos.Y.Offset + delta.Y) end end end)
 
+ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); ToggleButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); ToggleButton.Text = _G.AlitHubFarmActive and "FARM SYSTEM: ON" or "FARM SYSTEM: OFF" end)
 RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF" if not _G.AlitHubRestockActive then BuildMultiRakUI() end end)
--- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 6 ]]
--- MURNI MENGUNCI DATA NILAI ASLI FILE PROYEK: Mencegah rebutan teleportasi total dan memulihkan tombol Auto Farm
+LocalPlayer.Idled:Connect(function() if _G.AlitHubFarmActive or _G.AlitHubRestockActive then local vu = game:GetService("VirtualUser"); vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(0.5); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end end)
+-- [[ ALIT HUB V3 - STATE MACHINE SLOT LOCK - PART 6 ]]
+-- FIXXED CENTRAL MOTOR ENGINE: MENERAPKAN SIKLUS STATUS STATE MACHINE (EMPTY -> RESERVED -> FILLED) BERDASARKAN DOKUMEN USER
 task.spawn(function()
     while true do
-        task.wait(0.1)
+        task.wait(0.1) -- Jeda mikro ringan (UI Thread dijamin 100% Lega, Tombol Farm responsif)
         local char = LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -250,44 +246,41 @@ task.spawn(function()
         if root and hum then
             local actionExecuted = false
             
-            -- [[ PRIORITAS 1: OTOMATISASI KIOS MURNI DATA LOCK ]]
+            -- [[ PRIORITAS 1: IMPLEMENTASI MANAJEMEN STATE MACHINE RESTOCK ]]
             if _G.AlitHubRestockActive then
                 local kiosAktif = workspace:FindFirstChild("KiosAktif")
                 local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
+                
                 if myKios then
                     for _, slotName in ipairs(FIXED_RBXL_SLOTS) do
                         if not _G.AlitHubRestockActive then break end
                         
-                        local targetCleanName = SlotSpecificTargets[slotName] or ""
-                        if targetCleanName ~= "" and checkItemInBackpackClean(targetCleanName) then
-                            local slot = myKios:FindFirstChild(slotName) or myKios:FindFirstChild("slot " .. string.match(slotName, "%d+"))
+                        local slot = myKios:FindFirstChild(slotName) or myKios:FindFirstChild("slot " .. string.match(slotName, "%d+"))
+                        if slot then
+                            -- 1. Evaluasi Status Fisik Aktual dari IntValue Stok Anda
+                            local isTrayNowEmpty = IsTrayEmptyIndependent(slot)
                             
-                            if slot then
-                                -- [[ PROSEDURAL DATA VERIFICATION ]]: Membaca objek penanda nilai aslinya murni dari game Anda
-                                local dataValueObj = slot:FindFirstChild("Makanan") or slot:FindFirstChild("Masakan") or slot:FindFirstChildOfClass("StringValue") or slot:FindFirstChildOfClass("IntValue")
-                                local isSlotEmpty = true
+                            -- Sinkronisasi Real-Time: Jika dibeli NPC (Stok kosong kembali), ubah status memori ke EMPTY
+                            if isTrayNowEmpty and GlobalSlotStates[slotName] == TrayState.FILLED then
+                                GlobalSlotStates[slotName] = TrayState.EMPTY
+                            elseif not isTrayNowEmpty then
+                                GlobalSlotStates[slotName] = TrayState.FILLED
+                            end
+                            
+                            -- 2. EKSEKUSI PROSEDURAL: Hanya meluncur jika status murni EMPTY
+                            if GlobalSlotStates[slotName] == TrayState.EMPTY then
+                                local targetCleanName = SlotSpecificTargets[slotName] or ""
                                 
-                                if dataValueObj then
-                                    -- Jika game menggunakan Object Value/String Value penanda nama masakan
-                                    if dataValueObj:IsA("ValueBase") and tostring(dataValueObj.Value) ~= "" and tostring(dataValueObj.Value) ~= "0" then
-                                        isSlotEmpty = false
-                                    -- Jika game memunculkan langsung Model Makanan fisik di atasnya
-                                    elseif dataValueObj:IsA("Model") then
-                                        isSlotEmpty = false
-                                    end
-                                else
-                                    -- Cadangan: Jika model makanan di-klon langsung menggunakan nama menu jualan Anda
-                                    for _, c in pairs(slot:GetChildren()) do
-                                        if c:IsA("Model") then isSlotEmpty = false break end
-                                    end
-                                end
-                                
-                                -- BOT HANYA BOLEH TELEPORT JIKA DATA SLOT MEMBUAT STATUS REAKSI: KOSONG MURNI
-                                if isSlotEmpty then
+                                if targetCleanName ~= "" and checkItemInBackpackClean(targetCleanName) then
                                     local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
                                     if prompt and prompt.Enabled then
                                         local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
                                         if part and _G.AlitHubRestockActive then
+                                            
+                                            -- [[ TAHAP RESERVED ]]: Kunci langsung nampan ini dari memori agar tidak ada proses lain yang merebut posisi
+                                            GlobalSlotStates[slotName] = TrayState.RESERVED
+                                            
+                                            -- Jalankan Teleportasi Terisolasi ke depan meja nampan target
                                             instantTeleportTo(root, part.CFrame)
                                             task.wait(0.2)
                                             
@@ -295,8 +288,14 @@ task.spawn(function()
                                                 prompt:InputHoldBegin(); task.wait(0.4); prompt:InputHoldEnd()
                                                 if fireproximityprompt then fireproximityprompt(prompt) end
                                                 task.wait(0.4)
+                                                
+                                                -- [[ TAHAP FILLED ]]: Naikkan status menjadi FILLED setelah pengisian sukses dilakukan
+                                                GlobalSlotStates[slotName] = TrayState.FILLED
                                                 actionExecuted = true
-                                                break -- Keluar untuk merefresh urutan prioritas antrean dari slot paling atas
+                                                break -- Antrean sukses, hancurkan loop untuk menyegarkan prioritas slot berikutnya dari atas
+                                            else
+                                                -- Kembalikan ke EMPTY jika gagal memegang barang agar bisa dicoba antrean berikutnya
+                                                GlobalSlotStates[slotName] = TrayState.EMPTY
                                             end
                                         end
                                     end
@@ -307,7 +306,7 @@ task.spawn(function()
                 end
             end
             
-            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN (TOMBOL KEMBALI NORMAL & FULL RESPONS) ]]
+            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN (100% AMAN, ENTING, DAN FULL RESPONS)]]
             if not actionExecuted and _G.AlitHubFarmActive and #SelectedTargets > 0 then
                 local folder = workspace:FindFirstChild("SpawnBahan")
                 if folder then
