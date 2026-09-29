@@ -11,7 +11,7 @@ end
 _G.DynamicRestockActive = false
 local AutoDetectedSlots = {}
 local AutoDetectedTools = {}
-local SlotSpecificTargets = {} -- Menyimpan kuncian target makanan untuk setiap slot nampan secara mandiri
+local SlotSpecificTargets = {} 
 
 -- PREMIUM UI HITAM PEKAT + EMAS GLOW (NODE HUB ESTETIKA PREMIUM)
 local ScreenGui = Instance.new("ScreenGui")
@@ -56,7 +56,6 @@ local function ScanCurrentInventory()
     if char then for _, t in pairs(char:GetChildren()) do check(t) end end
 end
 -- [[ ALIT HUB - ISOLATED AUTO RESTOCK INDEPENDENT MULTI-RAK - PART 3 ]]
--- RENDER REAL-TIME LIST RAK DINAMIS MENGIKUTI STRUKTUR LEVEL TOKO ANDA
 local function BuildMultiRakUI()
     for _, child in pairs(MasterScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
     table.clear(AutoDetectedSlots)
@@ -104,7 +103,7 @@ end
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
 RestockButton.Activated:Connect(function() _G.DynamicRestockActive = not _G.DynamicRestockActive; RestockButton.BackgroundColor3 = _G.DynamicRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = _G.DynamicRestockActive and Color3.fromRGB(255, 185, 0) or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.DynamicRestockActive and "RESTOCK: ON" or "RESTOCK: OFF" if not _G.DynamicRestockActive then BuildMultiRakUI() end end)
 -- [[ ALIT HUB - ISOLATED AUTO RESTOCK INDEPENDENT MULTI-RAK - PART 4 ]]
--- FIXED AUTOMATION QUEUE CHRONOLOGICAL: Mengisi berurutan dari Rak 1 ke Rak berikutnya secara rapi tanpa berebutan koordinat
+-- FIXED SEAMLESS MULTI-SLOT ANTREAN CHRONOLOGICAL FLOW (ANTI-LOCK)
 local dragToggle, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end) end end)
 MainFrame.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
@@ -133,27 +132,25 @@ task.spawn(function()
                 local kiosAktif = workspace:FindFirstChild("KiosAktif")
                 local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
                 if myKios then
-                    -- PROSES URUTAN KRONOLOGIS: Membaca slot nampan secara rapi berurutan (slot1, slot2, slot3...)
+                    -- PROSES MUTAKHIR: Melakukan pemindaian berkelanjutan berurutan tanpa memutus antrean slot berikutnya
                     for _, slotName in ipairs(AutoDetectedSlots) do
                         if not _G.DynamicRestockActive then break end
                         local targetTool = SlotSpecificTargets[slotName] or ""
                         
-                        -- Jalankan pengisian jika rak dikunci dengan target jualan dan itemnya ada di dalam tas
                         if targetTool ~= "" and equipItem(targetTool) then
                             local slot = myKios:FindFirstChild(slotName)
                             if slot then
                                 local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                -- Mengisi jika dan hanya jika nampan tersebut berstatus KOSONG (Prompt Enabled)
+                                -- Hanya teleport jika nampan mendeteksi status "Slot Kosong" (Prompt Enabled)
                                 if prompt and prompt.Enabled then
                                     local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
-                                    if part then
+                                    if part and _G.DynamicRestockActive then
                                         instantTeleportTo(root, part.CFrame)
                                         task.wait(0.2)
                                         prompt:InputHoldBegin(); task.wait(0.4); prompt:InputHoldEnd()
                                         if fireproximityprompt then fireproximityprompt(prompt) end
-                                        task.wait(0.3)
-                                        -- Mengunci antrean agar fokus menyelesaikan slot ini sebelum lanjut ke slot berikutnya
-                                        break
+                                        task.wait(0.4) -- Jeda aman murni untuk menyelesaikan transaksi nampan saat ini
+                                        -- FIXED SEAMLESS: Tidak menggunakan break agar loop langsung bergeser memeriksa nampan berikutnya secara kronologis
                                     end
                                 end
                             end
