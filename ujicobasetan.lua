@@ -28,7 +28,7 @@ local SelectedTargets = {}
 
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -175, 0.3, -110)
 local TELEPORT_DELAY = 0.2      
-local MASA_TUNGGU = 2.5         
+local MASA_TUNGGU = 5.0         
 
 local BG_COLOR = Color3.fromRGB(15, 15, 15)
 local ACCENT_GOLD = Color3.fromRGB(255, 185, 0)
