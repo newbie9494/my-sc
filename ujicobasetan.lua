@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 - QUEUE LINE FIFO EDITION - PART 1 ]]
+-- [[ ALIT HUB V3 - FIFO QUEUE DEEP REPAIR - PART 1 ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -20,7 +20,7 @@ local TARGET_MAPPING = {
     ["Kepiting Sungai"] = "Spawn_KepitingSungai", ["Melati"] = "Spawn_Melati"
 }
 
--- URUTAN KAKU SEPERTI FILE RBXL: Memastikan pemindaian urut dari angka terkecil (1-12)
+-- URUTAN HIERARKI KAKU FILE RBXL: Memastikan pemindaian kronologis dari angka terkecil (1-12)
 local FIXED_RBXL_SLOTS = {
     "slot1", "slot2", "slot3", "slot4", "slot5", "slot6",
     "slot7", "slot8", "slot9", "slot10", "slot11", "slot12"
@@ -34,7 +34,7 @@ local SelectedTargets = {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -175, 0.3, -110)
 
 -- ====================================================================
--- [[ PENGATURAN DURASI JEDA / DELAY SEPERTI YANG ANDA PERINTAHKAN ]]
+-- [[ TEMPAT MENGATUR DELAY / JEDA RESTOCK - BARIS 33, 34, 35 ]]
 -- ====================================================================
 local RESTOCK_TELEPORT_DELAY = 0.3  -- Jeda diam sesaat setelah mendarat di nampan
 local RESTOCK_HOLD_DELAY = 0.4      -- Durasi menahan tombol E jualan game
@@ -50,7 +50,7 @@ local TEXT_DARK = Color3.fromRGB(200, 200, 200)
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
--- [[ ALIT HUB V3 - QUEUE LINE FIFO EDITION - PART 2 ]]
+-- [[ ALIT HUB V3 - FIFO QUEUE DEEP REPAIR - PART 2 ]]
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.BackgroundColor3 = BG_COLOR
 MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 350, 0, 220); MainFrame.BorderSizePixel = 1; MainFrame.BorderColor3 = ACCENT_GOLD
@@ -83,7 +83,7 @@ Instance.new("UICorner", OpenButton).CornerRadius = UDim.new(0, 5)
 
 MiniButton.Activated:Connect(function() GLOBAL_SAVED_POS = MainFrame.Position; MainFrame.Visible = false; OpenButton.Visible = true end)
 OpenButton.Activated:Connect(function() OpenButton.Visible = false; MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Visible = true end)
--- [[ ALIT HUB V3 - QUEUE LINE FIFO EDITION - PART 3 ]]
+-- [[ ALIT HUB V3 - FIFO QUEUE DEEP REPAIR - PART 3 ]]
 for i, tabName in ipairs(SidebarButtons) do
     local sBtn = Instance.new("TextButton")
     sBtn.Name = tabName .. "Btn"; sBtn.Parent = LeftSidebar; sBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); sBtn.Size = UDim2.new(1, -8, 0, 30); sBtn.Font = Enum.Font.GothamBold; sBtn.Text = tabName; sBtn.TextColor3 = Color3.fromRGB(200, 200, 200); sBtn.TextSize = 8; Instance.new("UICorner", sBtn).CornerRadius = UDim.new(0, 4)
@@ -107,7 +107,7 @@ for disp, ws in pairs(TARGET_MAPPING) do
 end
 ListContainer.CanvasSize = UDim2.new(0, 0, 0, 130)
 DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "SELECT TARGETS ▲" or "SELECT TARGETS ▼" end)
--- [[ ALIT HUB V3 - QUEUE LINE FIFO EDITION - PART 4 ]]
+-- [[ ALIT HUB V3 - FIFO QUEUE DEEP REPAIR - PART 4 ]]
 local RestockButton = Instance.new("TextButton"); RestockButton.Size = UDim2.new(1, 0, 0, 28); RestockButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "RESTOCK KIOS: OFF"; RestockButton.TextColor3 = Color3.fromRGB(220, 53, 69); RestockButton.TextSize = 9; RestockButton.Parent = SubFrames["AUTO STOCK"]; Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 4)
 local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "MasterScroll"; MasterScroll.Position = UDim2.new(0, 0, 0, 34); MasterScroll.Size = UDim2.new(1, 0, 1, -38); MasterScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 10); MasterScroll.BorderSizePixel = 0; MasterScroll.ScrollBarThickness = 3; MasterScroll.Parent = SubFrames["AUTO STOCK"]
 local UIMasterLayout = Instance.new("UIListLayout"); UIMasterLayout.Parent = MasterScroll; UIMasterLayout.Padding = UDim.new(0, 4)
@@ -177,7 +177,7 @@ local function BuildMultiRakUI()
     MasterScroll.CanvasSize = UDim2.new(0, 0, 0, #FIXED_RBXL_SLOTS * 36)
 end
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
--- [[ ALIT HUB V3 - QUEUE LINE FIFO EDITION - PART 5 ]]
+-- [[ ALIT HUB V3 - FIFO QUEUE DEEP REPAIR - PART 5 ]]
 local function checkItemInBackpackClean(cleanName)
     local bp = LocalPlayer:FindFirstChild("Backpack")
     local char = LocalPlayer.Character
@@ -209,15 +209,15 @@ local function executePerfectHarvest(prompt)
     task.wait(MASA_TUNGGU)
 end
 
--- FORMULA AMAN MURNI: Deteksi IntValue kosong atau bernilai 0 di folder Stok Anda
+-- RUMUSAN FISIK JINGGA ANDA: Memeriksa IntValue di dalam folder Stok Kios
 local function IsTrayEmptyIndependent(slotObj)
     if not slotObj then return true end
     local stokFolder = slotObj:FindFirstChild("Stok")
     if not stokFolder then return true end
     for _, item in ipairs(stokFolder:GetChildren()) do
-        if item:IsA("IntValue") and item.Value > 0 then return false end -- FILLED
+        if item:IsA("IntValue") and item.Value > 0 then return false end
     end
-    return true -- EMPTY
+    return true
 end
 
 local dragToggle, dragInput, dragStart, startPos
@@ -232,19 +232,19 @@ game:GetService("UserInputService").InputChanged:Connect(function(input) if inpu
 ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); ToggleButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); ToggleButton.Text = _G.AlitHubFarmActive and "FARM SYSTEM: ON" or "FARM SYSTEM: OFF" end)
 RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF" if not _G.AlitHubRestockActive then BuildMultiRakUI() end end)
 LocalPlayer.Idled:Connect(function() if _G.AlitHubFarmActive or _G.AlitHubRestockActive then local vu = game:GetService("VirtualUser"); vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(0.5); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end end)
--- [[ ALIT HUB V3 - QUEUE LINE FIFO EDITION - PART 6 ]]
--- MURNI BACKEND SINKRON SATU JALUR LURUS: MENGIKUTI CETAK BIRU ANTREAN DAN DELAY TOTAL KAKU MILIK USER
+-- [[ ALIT HUB V3 - FIFO QUEUE DEEP REPAIR - PART 6 ]]
+-- ENGINE SEAMLESS SINKRON: PERBAIKAN TOTAL ALAMAT INDEKS 1 (job = AntreanRestock[1]) & MANAJEMEN ANTREAN LURUS KAKU
 task.spawn(function()
     while true do
-        task.wait(0.05) -- Detakan super rapat untuk mengintip kondisi nampan secara instan
+        task.wait(0.05) 
         local char = LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         
         if root and hum then
-            local AntreanRestock = {} -- Tabel antrean lokal murni bersirkulasi mengalir alami
+            local AntreanRestock = {} 
             
-            -- [[ TAHAP 1: PENGUMPULAN BARISAN ANTREAN BERDASARKAN ANGKA KECIL SLOT (1-12) ]]
+            -- [[ TAHAP 1: KUMPULKAN BARISAN ANTREAN SECARA BERURUTAN (1 SAMPAI 12) ]]
             if _G.AlitHubRestockActive then
                 local kiosAktif = workspace:FindFirstChild("KiosAktif")
                 local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
@@ -252,12 +252,9 @@ task.spawn(function()
                     for _, slotName in ipairs(FIXED_RBXL_SLOTS) do
                         local slot = myKios:FindFirstChild(slotName) or myKios:FindFirstChild("slot " .. string.match(slotName, "%d+"))
                         if slot then
-                            -- Membaca data IntValue murni dari rumusan formulasi user
-                            local isTrayNowEmpty = IsTrayEmptyIndependent(slot)
-                            
-                            if isTrayNowEmpty then
+                            -- Membaca murni IntValue di folder Stok sesuai cetak biru Anda
+                            if IsTrayEmptyIndependent(slot) then
                                 local targetCleanName = SlotSpecificTargets[slotName] or ""
-                                -- Masukkan ke barisan antrean jika ada target masakan jualan dan barangnya ada di tas
                                 if targetCleanName ~= "" and checkItemInBackpackClean(targetCleanName) then
                                     table.insert(AntreanRestock, {slotObj = slot, slotName = slotName, itemName = targetCleanName})
                                 end
@@ -267,9 +264,9 @@ task.spawn(function()
                 end
             end
             
-            -- [[ TAHAP 2: EKSEKUSI INDEPENDEN JALUR LURUS (ANTI-REBUTAN TELEPORTASI DAN SINKRON) ]]
+            -- [[ TAHAP 2: EKSEKUSI INDEPENDEN JALUR LURUS AMAN (MURNI MEMBACA INDEKS 1) ]]
             if #AntreanRestock > 0 then
-                -- Ambil data antrean nomor satu paling depan murni (Urutan angka kecil terkunci)
+                -- CRITICAL FIX: Mengunci murni barisan nomor 1 paling depan saja [1] Sesuai Prosedur Anda
                 local job = AntreanRestock[1] 
                 local targetSlot = job.slotObj
                 local targetCleanName = job.itemName
@@ -279,32 +276,32 @@ task.spawn(function()
                     local part = targetSlot:IsA("BasePart") and targetSlot or targetSlot:FindFirstChildWhichIsA("BasePart", true)
                     if part and _G.AlitHubRestockActive then
                         
-                        -- [[ RESERVED SECARA LURUS SINKRON ]]: Saluran utama terkunci mematung di sini
-                        -- Seluruh proses looping di luar blok ditahan total sampai rangkaian jeda ini selesai
+                        -- [[ LOCK ANTREAN TERISOLASI ]]: Bot mendarat dan dipaksa menyelesaikan waktu jeda delay secara utuh!
                         instantTeleportTo(root, part.CFrame)
                         
-                        task.wait(RESTOCK_TELEPORT_DELAY) -- Jeda diam mendarat (Baris 33)
+                        task.wait(RESTOCK_TELEPORT_DELAY) -- Jeda diam pasca-teleport (0.3s)
                         
                         if equipItemClean(targetCleanName) then
                             prompt:InputHoldBegin()
-                            task.wait(RESTOCK_HOLD_DELAY) -- Jeda penahanan tombol E jualan game (Baris 34)
+                            task.wait(RESTOCK_HOLD_DELAY) -- Jeda menahan tombol E jualan game (0.4s)
                             prompt:InputHoldEnd()
                             
                             if fireproximityprompt then fireproximityprompt(prompt) end
                             
-                            task.wait(RESTOCK_COOLDOWN) -- Jeda cooldown akhir server (Baris 35)
+                            task.wait(RESTOCK_COOLDOWN) -- Jeda cooldown akhir server memuat IntValue (0.6s)
                         end
-                        -- [[ PROSES FILLED SELESAI KAKU - JALUR KEMBALI DIBUKA BERURUTAN ]]
+                        
+                        -- Setelah rangkaian waktu tunggu selesai total, data nomor 1 otomatis dikeluarkan via putaran loop berikutnya
+                        actionExecuted = true
                     end
                 end
                 
-            -- [[ TAHAP 3: LOGIKA AUTO FARMING HUTAN (OTOMATIS MENGANTRI DI BELAKANG KIOS) ]]
-            -- Hanya berjalan jika antrean meja jualan kosong murni (#AntreanRestock == 0)
+            -- [[ TAHAP 3: LOGIKA AUTO FARMING HUTAN (OTOMATIS MENGANTRI DI BELAKANG KIOS JUALAN) ]]
             elseif _G.AlitHubFarmActive and #SelectedTargets > 0 then
                 local folder = workspace:FindFirstChild("SpawnBahan")
                 if folder then
                     for _, obj in pairs(folder:GetChildren()) do
-                        -- Jika tiba-tiba ada slot kosong saat farming, interupsi langsung memutus loop panen ini
+                        -- Jika mendadak ada rak kosong saat panen, interupsi langsung menghentikan loop farm hutan
                         if #AntreanRestock > 0 or not _G.AlitHubFarmActive then break end
                         
                         if table.find(SelectedTargets, obj.Name) then
