@@ -21,9 +21,9 @@ local TARGET_MAPPING = {
     ["Kepiting Sungai"] = "Spawn_KepitingSungai", ["Melati"] = "Spawn_Melati"
 }
 local RESTOCK_MAPPING = {
-    ["Sate Gagak"] = "SateGagak", ["Jamur Rebus Kuburan"] = "JamurRebus",
-    ["Tumis Kamboja"] = "TumisKamboja", ["Sate Kepiting"] = "SateKepiting",
-    ["Pisang Raja Rebus"] = "PisangRajaRebus", ["Kopi Kemenyan"] = "KopiKemenyan"
+    ["Sate Gagak"] = "Sate Gagak", ["Jamur Rebus Kuburan"] = "Jamur Rebus Kuburan",
+    ["Tumis Kamboja"] = "Tumis Kamboja", ["Sate Kepiting"] = "Sate Kepiting",
+    ["Pisang Raja Rebus"] = "Pisang Raja Rebus", ["Kopi Kemenyan"] = "Kopi Kemenyan"
 }
 local COOK_MAPPING = {
     ["Sate Gagak"] = "SateGagak", ["Jamur Rebus Kuburan"] = "JamurRebus",
@@ -34,7 +34,7 @@ local FEED_MAPPING = { ["Jamur Rebus"] = "JamurRebus", ["Pisang Raja Rebus"] = "
 
 local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -175, 0.3, -110)
-_G.SelectedCookMenu = "Sate Gagak"
+_G.SelectedCookMenu = "SateGagak"
 
 local TELEPORT_DELAY = 0.2      
 local MASA_TUNGGU = 5.0         
@@ -52,7 +52,6 @@ MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.Background
 MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 350, 0, 220); MainFrame.BorderSizePixel = 1; MainFrame.BorderColor3 = ACCENT_GOLD
 MainFrame.ClipsDescendants = true; MainFrame.Active = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
--- BATAS AMAN BAGIAN 1
 -- [[ ALIT HUB V3 - INDEPENDENT THREAD ISOLATION EDITION - PART 2 ]]
 local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 35)
 local TitleLabel = Instance.new("TextLabel")
@@ -92,7 +91,7 @@ for i, tabName in ipairs(SidebarButtons) do
     end)
     if i == 1 then sBtn.TextColor3 = ACCENT_GOLD; sBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 20) end
 end
-
+-- [[ ALIT HUB V3 - INDEPENDENT THREAD ISOLATION EDITION - PART 3 ]]
 local ToggleButton = Instance.new("TextButton"); ToggleButton.Size = UDim2.new(1, 0, 0, 28); ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM SYSTEM: OFF"; ToggleButton.TextColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.TextSize = 9; ToggleButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 4)
 local DropdownButton = Instance.new("TextButton"); DropdownButton.Position = UDim2.new(0, 0, 0, 34); DropdownButton.Size = UDim2.new(1, 0, 0, 24); DropdownButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "SELECT TARGETS ▼"; DropdownButton.TextColor3 = TEXT_DARK; DropdownButton.TextSize = 9; DropdownButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 4)
 local ListContainer = Instance.new("ScrollingFrame"); ListContainer.Position = UDim2.new(0, 0, 0, 62); ListContainer.Size = UDim2.new(1, 0, 1, -62); ListContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 2; ListContainer.Visible = false; ListContainer.Parent = SubFrames["AUTO FARM"]
@@ -112,8 +111,7 @@ local CookButton = Instance.new("TextButton"); CookButton.Size = UDim2.new(1, 0,
 local DropdownButton3 = Instance.new("TextButton"); DropdownButton3.Position = UDim2.new(0, 0, 0, 34); DropdownButton3.Size = UDim2.new(1, 0, 0, 24); DropdownButton3.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton3.Font = Enum.Font.GothamSemibold; DropdownButton3.Text = "RECIPE: SATE GAGAK ▼"; DropdownButton3.TextColor3 = TEXT_DARK; DropdownButton3.TextSize = 9; DropdownButton3.Parent = SubFrames["AUTO COOK"]; Instance.new("UICorner", DropdownButton3).CornerRadius = UDim.new(0, 4)
 local ListContainer3 = Instance.new("ScrollingFrame"); ListContainer3.Position = UDim2.new(0, 0, 0, 62); ListContainer3.Size = UDim2.new(1, 0, 1, -62); ListContainer3.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer3.BorderSizePixel = 0; ListContainer3.ScrollBarThickness = 2; ListContainer3.Visible = false; ListContainer3.Parent = SubFrames["AUTO COOK"]
 local UIListLayout3 = Instance.new("UIListLayout"); UIListLayout3.Parent = ListContainer3; UIListLayout3.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout3.Padding = UDim.new(0, 2)
--- BATAS AMAN BAGIAN 2
--- [[ ALIT HUB V3 - INDEPENDENT THREAD ISOLATION EDITION - PART 3 ]]
+-- [[ ALIT HUB V3 - INDEPENDENT THREAD ISOLATION EDITION - PART 4 ]]
 for disp, ws in pairs(TARGET_MAPPING) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 20); btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); btn.Text = "  " .. disp; btn.TextColor3 = TEXT_DARK; btn.Font = Enum.Font.GothamSemibold; btn.TextSize = 9; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = ListContainer; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function() local idx = table.find(SelectedTargets, ws) if idx then table.remove(SelectedTargets, idx); btn.TextColor3 = TEXT_DARK; btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20) else table.insert(SelectedTargets, ws); btn.TextColor3 = BG_COLOR; btn.BackgroundColor3 = ACCENT_GOLD end end)
@@ -122,13 +120,13 @@ for disp, tool in pairs(RESTOCK_MAPPING) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 20); btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); btn.Text = "  " .. disp; btn.TextColor3 = TEXT_DARK; btn.Font = Enum.Font.GothamSemibold; btn.TextSize = 9; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = ListContainer2; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function() local idx = table.find(SelectedRestock, tool) if idx then table.remove(SelectedRestock, idx); btn.TextColor3 = TEXT_DARK; btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20) else table.insert(SelectedRestock, tool); btn.TextColor3 = BG_COLOR; btn.BackgroundColor3 = ACCENT_GOLD end end)
 end
-for disp, tool in pairs(RESTOCK_MAPPING) do
-    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 20); btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); btn.Text = "  " .. disp; btn.TextColor3 = TEXT_DARK; btn.Font = Enum.Font.GothamSemibold; btn.TextSize = 9; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = ListContainer3; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    btn.Activated:Connect(function() _G.SelectedCookMenu = disp; DropdownButton3.Text = "RECIPE: " .. string.upper(disp) .. " ▼"; ListContainer3.Visible = false end)
-end
 for disp, tool in pairs(FEED_MAPPING) do
     local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 20); btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); btn.Text = "  " .. disp; btn.TextColor3 = TEXT_DARK; btn.Font = Enum.Font.GothamSemibold; btn.TextSize = 9; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = ListContainerFeed; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     btn.Activated:Connect(function() local idx = table.find(SelectedFeed, tool) if idx then table.remove(SelectedFeed, idx); btn.TextColor3 = TEXT_DARK; btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20) else table.insert(SelectedFeed, tool); btn.TextColor3 = BG_COLOR; btn.BackgroundColor3 = ACCENT_GOLD end end)
+end
+for disp, code in pairs(COOK_MAPPING) do
+    local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 0, 20); btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); btn.Text = "  " .. disp; btn.TextColor3 = TEXT_DARK; btn.Font = Enum.Font.GothamSemibold; btn.TextSize = 9; btn.TextXAlignment = Enum.TextXAlignment.Left; btn.Parent = ListContainer3; Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+    btn.Activated:Connect(function() _G.SelectedCookMenu = code; DropdownButton3.Text = "RECIPE: " .. string.upper(disp) .. " ▼"; ListContainer3.Visible = false end)
 end
 
 local function equipItem(itemName)
@@ -204,8 +202,7 @@ LocalPlayer.Idled:Connect(function()
         vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(0.5); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     end
 end)
--- BATAS AMAN BAGIAN 3
--- [[ ALIT HUB V3 - INDEPENDENT THREAD ISOLATION EDITION - PART 4 ]]
+-- [[ ALIT HUB V3 - INDEPENDENT THREAD ISOLATION EDITION - PART 5 ]]
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -251,12 +248,7 @@ task.spawn(function()
                                 for _, toolName in ipairs(SelectedRestock) do
                                     if equipItem(toolName) then
                                         local targetPart = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
-                                        if targetPart and _G.AlitHubRestockActive then
-                                            instantTeleportTo(root, targetPart.CFrame)
-                                            executePerfectHarvest(prompt)
-                                            breakRestock = true
-                                            break
-                                        end
+                                        if targetPart and _G.AlitHubRestockActive then instantTeleportTo(root, targetPart.CFrame); executePerfectHarvest(prompt); breakRestock = true; break end
                                     end
                                 end
                                 if breakRestock then break end
