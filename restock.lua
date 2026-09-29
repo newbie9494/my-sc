@@ -12,6 +12,7 @@ _G.DynamicRestockActive = false
 local AutoDetectedSlots = {}
 local AutoDetectedTools = {}
 local SlotSpecificTargets = {} 
+local SlotBlacklistCache = {} 
 
 -- PREMIUM UI HITAM PEKAT + EMAS GLOW (NODE HUB ESTETIKA PREMIUM)
 local ScreenGui = Instance.new("ScreenGui")
@@ -103,7 +104,7 @@ end
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
 RestockButton.Activated:Connect(function() _G.DynamicRestockActive = not _G.DynamicRestockActive; RestockButton.BackgroundColor3 = _G.DynamicRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = _G.DynamicRestockActive and Color3.fromRGB(255, 185, 0) or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.DynamicRestockActive and "RESTOCK: ON" or "RESTOCK: OFF" if not _G.DynamicRestockActive then BuildMultiRakUI() end end)
 -- [[ ALIT HUB - ISOLATED AUTO RESTOCK INDEPENDENT MULTI-RAK - PART 4 ]]
--- FIXED SEAMLESS MULTI-SLOT ANTREAN CHRONOLOGICAL FLOW (ANTI-LOCK)
+-- FIXED SEAMLESS MULTI-SLOT CHRONOLOGICAL LOOP: Menghapus total kuncian break agar bot sukses mengisi semua rak secara berurutan
 local dragToggle, dragInput, dragStart, startPos
 MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end) end end)
 MainFrame.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
@@ -132,16 +133,21 @@ task.spawn(function()
                 local kiosAktif = workspace:FindFirstChild("KiosAktif")
                 local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
                 if myKios then
-                    -- PROSES MUTAKHIR: Melakukan pemindaian berkelanjutan berurutan tanpa memutus antrean slot berikutnya
+                    -- MEMULAI PEMINDAIAN BERURUTAN KRONOLOGIS TANPA PUTUS BLOCK
                     for _, slotName in ipairs(AutoDetectedSlots) do
                         if not _G.DynamicRestockActive then break end
-                        local targetTool = SlotSpecificTargets[slotName] or ""
                         
+                        -- Cek masa kuncian: Lewati rak ini jika baru saja diisi agar bot dipaksa maju memeriksa rak berikutnya
+                        if SlotBlacklistCache[slotName] and tick() < SlotBlacklistCache[slotName] then
+                            -- Menggunakan continue (BUKAN break) agar loop tetap berlanjut memeriksa rak selanjutnya secara mulus
+                            continue
+                        end
+                        
+                        local targetTool = SlotSpecificTargets[slotName] or ""
                         if targetTool ~= "" and equipItem(targetTool) then
                             local slot = myKios:FindFirstChild(slotName)
                             if slot then
                                 local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                -- Hanya teleport jika nampan mendeteksi status "Slot Kosong" (Prompt Enabled)
                                 if prompt and prompt.Enabled then
                                     local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
                                     if part and _G.DynamicRestockActive then
@@ -149,8 +155,11 @@ task.spawn(function()
                                         task.wait(0.2)
                                         prompt:InputHoldBegin(); task.wait(0.4); prompt:InputHoldEnd()
                                         if fireproximityprompt then fireproximityprompt(prompt) end
-                                        task.wait(0.4) -- Jeda aman murni untuk menyelesaikan transaksi nampan saat ini
-                                        -- FIXED SEAMLESS: Tidak menggunakan break agar loop langsung bergeser memeriksa nampan berikutnya secara kronologis
+                                        
+                                        -- Mengunci nomor nampan ini selama 6 detik dari radar bot agar antrean langsung bergeser ke rak kosong lainnya
+                                        SlotBlacklistCache[slotName] = tick() + 6.0
+                                        task.wait(0.4)
+                                        -- FIXED: Perintah break yang merusak sistem kemarin resmi DIHAPUS agar loop bebas mengalir ke rak 2, 3, dst
                                     end
                                 end
                             end
