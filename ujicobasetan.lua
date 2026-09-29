@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 - INTEGRASI PROCEDURAL PRIORITAS UTUH - PART 1 ]]
+-- [[ ALIT HUB V3 - EVENT SIGNAL REALTIME EDITION - PART 1 ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -21,7 +21,6 @@ local TARGET_MAPPING = {
 }
 
 local AutoDetectedSlots = {}
-local AutoDetectedTools = {}
 local SlotSpecificTargets = {} 
 local SelectedTargets = {}
 
@@ -41,7 +40,7 @@ MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.Background
 MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 350, 0, 220); MainFrame.BorderSizePixel = 1; MainFrame.BorderColor3 = ACCENT_GOLD
 MainFrame.ClipsDescendants = true; MainFrame.Active = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
--- [[ ALIT HUB V3 - INTEGRASI PROCEDURAL PRIORITAS UTUH - PART 2 ]]
+-- [[ ALIT HUB V3 - EVENT SIGNAL REALTIME EDITION - PART 2 ]]
 local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 35)
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "TitleLabel"; TitleLabel.Parent = TopBar; TitleLabel.BackgroundTransparency = 1; TitleLabel.Position = UDim2.new(0, 12, 0, 0); TitleLabel.Size = UDim2.new(0, 150, 0, 35)
@@ -80,7 +79,7 @@ for i, tabName in ipairs(SidebarButtons) do
     end)
     if i == 1 then sBtn.TextColor3 = ACCENT_GOLD; sBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 20) end
 end
--- [[ ALIT HUB V3 - INTEGRASI PROCEDURAL PRIORITAS UTUH - PART 3 ]]
+-- [[ ALIT HUB V3 - EVENT SIGNAL REALTIME EDITION - PART 3 ]]
 local ToggleButton = Instance.new("TextButton"); ToggleButton.Size = UDim2.new(1, 0, 0, 28); ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM SYSTEM: OFF"; ToggleButton.TextColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.TextSize = 9; ToggleButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 4)
 local DropdownButton = Instance.new("TextButton"); DropdownButton.Position = UDim2.new(0, 0, 0, 34); DropdownButton.Size = UDim2.new(1, 0, 0, 24); DropdownButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "SELECT TARGETS ▼"; DropdownButton.TextColor3 = TEXT_DARK; DropdownButton.TextSize = 9; DropdownButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 4)
 local ListContainer = Instance.new("ScrollingFrame"); ListContainer.Position = UDim2.new(0, 0, 0, 62); ListContainer.Size = UDim2.new(1, 0, 1, -62); ListContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 2; ListContainer.Visible = false; ListContainer.Parent = SubFrames["AUTO FARM"]
@@ -94,41 +93,37 @@ ListContainer.CanvasSize = UDim2.new(0, 0, 0, 130)
 DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "SELECT TARGETS ▲" or "SELECT TARGETS ▼" end)
 ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); ToggleButton.TextColor3 = _G.AlitHubFarmActive and ACCENT_GOLD or Color3.fromRGB(220, 53, 69); ToggleButton.Text = _G.AlitHubFarmActive and "FARM SYSTEM: ON" or "FARM SYSTEM: OFF" end)
 
--- MURNI STRUKTUR FRAME UTAMA TAB RESTOCK DARI FILE TXT ANDA
 local RestockButton = Instance.new("TextButton"); RestockButton.Size = UDim2.new(1, 0, 0, 28); RestockButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "RESTOCK KIOS: OFF"; RestockButton.TextColor3 = Color3.fromRGB(220, 53, 69); RestockButton.TextSize = 9; RestockButton.Parent = SubFrames["AUTO STOCK"]; Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 4)
 local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "MasterScroll"; MasterScroll.Position = UDim2.new(0, 0, 0, 34); MasterScroll.Size = UDim2.new(1, 0, 1, -38); MasterScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 10); MasterScroll.BorderSizePixel = 0; MasterScroll.ScrollBarThickness = 3; MasterScroll.Parent = SubFrames["AUTO STOCK"]
 local UIMasterLayout = Instance.new("UIListLayout"); UIMasterLayout.Parent = MasterScroll; UIMasterLayout.Padding = UDim.new(0, 4)
 
 local PigLabel = Instance.new("TextLabel"); PigLabel.Size = UDim2.new(1, 0, 0, 30); PigLabel.BackgroundTransparency = 1; PigLabel.Font = Enum.Font.GothamBold; PigLabel.Text = "PIG CONFIGURATION PLACEHOLDER"; PigLabel.TextColor3 = TEXT_DARK; PigLabel.TextSize = 8; PigLabel.Parent = SubFrames["AUTO PIG"]
 local CookLabel = Instance.new("TextLabel"); CookLabel.Size = UDim2.new(1, 0, 0, 30); CookLabel.BackgroundTransparency = 1; CookLabel.Font = Enum.Font.GothamBold; CookLabel.Text = "COOK CONFIGURATION PLACEHOLDER"; CookLabel.TextColor3 = TEXT_DARK; CookLabel.TextSize = 8; CookLabel.Parent = SubFrames["AUTO COOK"]
--- [[ ALIT HUB V3 - INTEGRASI PROCEDURAL PRIORITAS UTUH - PART 4 ]]
--- MURNI KODE ENGINE INVENTORY SCAN DAN BUILD MULTI-RAK SESUAI FILE TXT ANDA
-local function ScanCurrentInventory()
-    table.clear(AutoDetectedTools)
+-- [[ ALIT HUB V3 - EVENT SIGNAL REALTIME EDITION - PART 4 ]]
+-- MURNI FILTER EVENT LISTENER: Mengambil isi tas secara nyata & menyaring alat/bibit secara real-time
+local function GetLiveInventoryFiltered()
+    local liveItems = {}
     local bp = LocalPlayer:FindFirstChild("Backpack")
     local char = LocalPlayer.Character
-    local foundItems = {}
-    local function check(tool)
-        if tool:IsA("Tool") and not foundItems[tool.Name] then
+    local found = {}
+    local function process(tool)
+        if tool:IsA("Tool") and not found[tool.Name] then
             local nameLower = string.lower(tool.Name)
             if not (string.find(nameLower, "penyiram") or string.find(nameLower, "bibit") or string.find(nameLower, "lantern") or string.find(nameLower, "gerobak") or string.find(nameLower, "payung") or string.find(nameLower, "arwah") or string.find(nameLower, "pusaka") or string.find(nameLower, "tas")) then
-                foundItems[tool.Name] = true
-                table.insert(AutoDetectedTools, tool.Name)
+                found[tool.Name] = true; table.insert(liveItems, tool.Name)
             end
         end
     end
-    if bp then for _, t in pairs(bp:GetChildren()) do check(t) end end
-    if char then for _, t in pairs(char:GetChildren()) do check(t) end end
+    if bp then for _, t in pairs(bp:GetChildren()) do process(t) end end
+    if char then for _, t in pairs(char:GetChildren()) do process(t) end end
+    return liveItems
 end
 
 local function BuildMultiRakUI()
     for _, child in pairs(MasterScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
     table.clear(AutoDetectedSlots)
-    ScanCurrentInventory()
-    
     local kiosAktif = workspace:FindFirstChild("KiosAktif")
     local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
-    
     if myKios then
         local slotIndices = {}
         for _, obj in pairs(myKios:GetChildren()) do
@@ -138,28 +133,29 @@ local function BuildMultiRakUI()
             end
         end
         table.sort(slotIndices, function(a, b) return a.index < b.index end)
-        
         for _, slotData in ipairs(slotIndices) do
-            local sName = slotData.name
-            table.insert(AutoDetectedSlots, sName)
+            local sName = slotData.name; table.insert(AutoDetectedSlots, sName)
             if not SlotSpecificTargets[sName] then SlotSpecificTargets[sName] = "" end
-            
             local rowFrame = Instance.new("Frame"); rowFrame.Size = UDim2.new(1, -4, 0, 32); rowFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); rowFrame.Parent = MasterScroll; Instance.new("UICorner", rowFrame).CornerRadius = UDim.new(0, 4)
             local rLabel = Instance.new("TextLabel"); rLabel.Size = UDim2.new(0, 60, 1, 0); rLabel.Position = UDim2.new(0, 6, 0, 0); rLabel.BackgroundTransparency = 1; rLabel.Font = Enum.Font.GothamBold; rLabel.Text = string.upper(sName); rLabel.TextColor3 = Color3.fromRGB(200, 200, 200); rLabel.TextSize = 8; rLabel.TextXAlignment = Enum.TextXAlignment.Left; rLabel.Parent = rowFrame
             local rDrop = Instance.new("TextButton"); rDrop.Size = UDim2.new(1, -70, 0, 20); rDrop.Position = UDim2.new(0, 64, 0, 6); rDrop.BackgroundColor3 = Color3.fromRGB(30, 30, 30); rDrop.Font = Enum.Font.GothamSemibold; rDrop.Text = SlotSpecificTargets[sName] ~= "" and SlotSpecificTargets[sName] or "NONE ▼"; rDrop.TextColor3 = ACCENT_GOLD; rDrop.TextSize = 7; rDrop.Parent = rowFrame; Instance.new("UICorner", rDrop).CornerRadius = UDim.new(0, 4)
-            
             local subContainer = Instance.new("ScrollingFrame"); subContainer.Size = UDim2.new(1, -10, 0, 50); subContainer.Position = UDim2.new(0, 5, 0, 28); subContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 15); subContainer.ZIndex = 5; subContainer.Visible = false; subContainer.ScrollBarThickness = 2; subContainer.Parent = rowFrame; Instance.new("UIListLayout", subContainer).Padding = UDim.new(0, 2)
             
-            rDrop.Activated:Connect(function() subContainer.Visible = not subContainer.Visible; rowFrame.Size = subContainer.Visible and UDim2.new(1, -4, 0, 85) or UDim2.new(1, -4, 0, 32); MasterScroll.CanvasSize = UDim2.new(0, 0, 0, MasterScroll.UIListLayout.AbsoluteContentSize.Y + 10) end)
-            
-            local noneBtn = Instance.new("TextButton"); noneBtn.Size = UDim2.new(1, 0, 0, 14); noneBtn.BackgroundColor3 = Color3.fromRGB(25, 15, 15); noneBtn.Text = "  NONE"; noneBtn.TextColor3 = Color3.fromRGB(220, 53, 69); noneBtn.Font = Enum.Font.GothamSemibold; noneBtn.TextSize = 7; noneBtn.TextXAlignment = Enum.TextXAlignment.Left; noneBtn.ZIndex = 6; noneBtn.Parent = subContainer; Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 4)
-            noneBtn.Activated:Connect(function() SlotSpecificTargets[sName] = ""; rDrop.Text = "NONE ▼"; subContainer.Visible = false; rowFrame.Size = UDim2.new(1, -4, 0, 32) end)
-            
-            for _, tName in ipairs(AutoDetectedTools) do
-                local tBtn = Instance.new("TextButton"); tBtn.Size = UDim2.new(1, 0, 0, 14); tBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); tBtn.Text = "  " .. tName; tBtn.TextColor3 = Color3.fromRGB(200, 200, 200); tBtn.Font = Enum.Font.GothamSemibold; tBtn.TextSize = 7; tBtn.TextXAlignment = Enum.TextXAlignment.Left; tBtn.ZIndex = 6; tBtn.Parent = subContainer; Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 4)
-                tBtn.Activated:Connect(function() SlotSpecificTargets[sName] = tName; rDrop.Text = tName .. " ▼"; subContainer.Visible = false; rowFrame.Size = UDim2.new(1, -4, 0, 32) end)
-            end
-            subContainer.CanvasSize = UDim2.new(0, 0, 0, (#AutoDetectedTools + 1) * 16)
+            -- SINKRONISASI MUTLAK EVENT LISTENER: Dropdown dilarang memuat preset palsu tidak jelas
+            rDrop.Activated:Connect(function() 
+                if not subContainer.Visible then
+                    for _, c in pairs(subContainer:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+                    local currentBag = GetLiveInventoryFiltered()
+                    local noneBtn = Instance.new("TextButton"); noneBtn.Size = UDim2.new(1, 0, 0, 14); noneBtn.BackgroundColor3 = Color3.fromRGB(25, 15, 15); noneBtn.Text = "  NONE"; noneBtn.TextColor3 = Color3.fromRGB(220, 53, 69); noneBtn.Font = Enum.Font.GothamSemibold; noneBtn.TextSize = 7; noneBtn.TextXAlignment = Enum.TextXAlignment.Left; noneBtn.ZIndex = 6; noneBtn.Parent = subContainer; Instance.new("UICorner", noneBtn).CornerRadius = UDim.new(0, 4)
+                    noneBtn.Activated:Connect(function() SlotSpecificTargets[sName] = ""; rDrop.Text = "NONE ▼"; subContainer.Visible = false; rowFrame.Size = UDim2.new(1, -4, 0, 32) end)
+                    for _, tName in ipairs(currentBag) do
+                        local tBtn = Instance.new("TextButton"); tBtn.Size = UDim2.new(1, 0, 0, 14); tBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); tBtn.Text = "  " .. tName; tBtn.TextColor3 = Color3.fromRGB(200, 200, 200); tBtn.Font = Enum.Font.GothamSemibold; tBtn.TextSize = 7; tBtn.TextXAlignment = Enum.TextXAlignment.Left; tBtn.ZIndex = 6; tBtn.Parent = subContainer; Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 4)
+                        tBtn.Activated:Connect(function() SlotSpecificTargets[sName] = tName; rDrop.Text = tName .. " ▼"; subContainer.Visible = false; rowFrame.Size = UDim2.new(1, -4, 0, 32) end)
+                    end
+                    subContainer.CanvasSize = UDim2.new(0, 0, 0, (#currentBag + 1) * 16)
+                end
+                subContainer.Visible = not subContainer.Visible; rowFrame.Size = subContainer.Visible and UDim2.new(1, -4, 0, 85) or UDim2.new(1, -4, 0, 32); MasterScroll.CanvasSize = UDim2.new(0, 0, 0, MasterScroll.UIListLayout.AbsoluteContentSize.Y + 10) 
+            end)
         end
     end
     MasterScroll.CanvasSize = UDim2.new(0, 0, 0, #AutoDetectedSlots * 36)
@@ -167,7 +163,7 @@ end
 
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
 RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF" if not _G.AlitHubRestockActive then BuildMultiRakUI() end end)
--- [[ ALIT HUB V3 - INTEGRASI PROCEDURAL PRIORITAS UTUH - PART 5 ]]
+-- [[ ALIT HUB V3 - EVENT SIGNAL REALTIME EDITION - PART 5 ]]
 local function checkItemInBackpack(itemName)
     local bp = LocalPlayer:FindFirstChild("Backpack")
     local char = LocalPlayer.Character
@@ -206,8 +202,8 @@ OpenButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.Use
 game:GetService("UserInputService").InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then if floatToggle then local delta = input.Position - floatStart; OpenButton.Position = UDim2.new(floatStartPos.X.Scale, floatStartPos.X.Offset + delta.X, floatStartPos.Y.Scale, floatStartPos.Y.Offset + delta.Y) end end end)
 
 LocalPlayer.Idled:Connect(function() if _G.AlitHubFarmActive or _G.AlitHubRestockActive then local vu = game:GetService("VirtualUser"); vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(0.5); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end end)
--- [[ ALIT HUB V3 - INTEGRASI PROCEDURAL PRIORITAS UTUH - PART 6 ]]
--- FIXXED CENTRAL LOOP: 1 JALUR PERULANGAN TUNGGAL PRIORITAS SAH (STOCK OVER FARM)
+-- [[ ALIT HUB V3 - EVENT SIGNAL REALTIME EDITION - PART 6 ]]
+-- FIXXED JALUR TUNGGAL PRIORITAS SAH (LIVE WORKSPACE SCANNER - ANTI MATI RADAR)
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -218,35 +214,39 @@ task.spawn(function()
         if root and hum then
             local actionExecuted = false
             
-            -- [[ PRIORITAS 1: EVALUASI KIOS RESTOCK (MURNI METODE FIXXED AMAN) ]]
-            if _G.AlitHubRestockActive and #AutoDetectedSlots > 0 then
+            -- [[ PRIORITAS 1: EVALUASI KIOS RESTOCK (MURNI LIVE PEMBACAAN WORKSPACE) ]]
+            if _G.AlitHubRestockActive then
                 local kiosAktif = workspace:FindFirstChild("KiosAktif")
                 local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
                 if myKios then
-                    for _, slotName in ipairs(AutoDetectedSlots) do
-                        if not _G.AlitHubRestockActive then break end
+                    -- Pemindaian fisik langsung ke objek nampan di game agar radar TIDAK AKAN PERNAH CRASH/MATI
+                    for i = 1, 12 do
+                        local slotName = "slot" .. i
+                        local slot = myKios:FindFirstChild(slotName) or myKios:FindFirstChild("slot " .. i)
                         
-                        local targetTool = SlotSpecificTargets[slotName] or ""
-                        -- Validasi kepemilikan tas secara real-time SEBELUM memicu pergerakan avatar
-                        if targetTool ~= "" and checkItemInBackpack(targetTool) then
-                            local slot = myKios:FindFirstChild(slotName)
-                            local prompt = slot and slot:FindFirstChildWhichIsA("ProximityPrompt", true)
+                        if slot then
+                            local targetTool = SlotSpecificTargets[slotName] or SlotSpecificTargets["slot " .. i] or ""
                             
-                            -- Jika rak kosong (Prompt game aktif), eksekusi instan dibobol masuk
-                            if prompt and prompt.Enabled then
-                                local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
-                                if part and _G.AlitHubRestockActive then
-                                    -- Teleportasi dulu mendarat di depan meja nampan kosong
-                                    instantTeleportTo(root, part.CFrame)
-                                    task.wait(0.2)
-                                    
-                                    -- Pemegangan barang dipicu tepat di depan nampan biar tas tidak ke-freeze server
-                                    if equipItem(targetTool) then
-                                        prompt:InputHoldBegin(); task.wait(0.4); prompt:InputHoldEnd()
-                                        if fireproximityprompt then fireproximityprompt(prompt) end
-                                        task.wait(0.4)
-                                        actionExecuted = true
-                                        break -- Keluar untuk merefresh prioritas loop dari nampan awal secara estafet
+                            -- Cek kepemilikan tas secara nyata sebelum memicu teleportasi
+                            if targetTool ~= "" and checkItemInBackpack(targetTool) then
+                                local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                
+                                -- Jika nampan kosong (Prompt aktif murni dari game), serang!
+                                if prompt and prompt.Enabled then
+                                    local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
+                                    if part and _G.AlitHubRestockActive then
+                                        -- Teleportasi dulu mendarat di depan nampan kosong
+                                        instantTeleportTo(root, part.CFrame)
+                                        task.wait(0.2)
+                                        
+                                        -- Pemegangan barang dipicu tepat di depan nampan biar tas tidak ke-freeze server
+                                        if equipItem(targetTool) then
+                                            prompt:InputHoldBegin(); task.wait(0.4); prompt:InputHoldEnd()
+                                            if fireproximityprompt then fireproximityprompt(prompt) end
+                                            task.wait(0.4)
+                                            actionExecuted = true
+                                            break -- Segera ulangi detakan dari atas untuk memeriksa kondisi rak berikutnya secara estafet
+                                        end
                                     end
                                 end
                             end
@@ -255,7 +255,7 @@ task.spawn(function()
                 end
             end
             
-            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN (OTOMATIS BERJALAN JIKA KIOS SUDAH AMAN PENUH) ]]
+            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN (OTOMATIS LANJUT JIKA KIOS AMAN PENUH) ]]
             if not actionExecuted and _G.AlitHubFarmActive and #SelectedTargets > 0 then
                 local folder = workspace:FindFirstChild("SpawnBahan")
                 if folder then
