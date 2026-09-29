@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 1 ]]
+-- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 1 ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -46,7 +46,7 @@ MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.Background
 MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 350, 0, 220); MainFrame.BorderSizePixel = 1; MainFrame.BorderColor3 = ACCENT_GOLD
 MainFrame.ClipsDescendants = true; MainFrame.Active = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
--- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 2 ]]
+-- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 2 ]]
 local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 35)
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "TitleLabel"; TitleLabel.Parent = TopBar; TitleLabel.BackgroundTransparency = 1; TitleLabel.Position = UDim2.new(0, 12, 0, 0); TitleLabel.Size = UDim2.new(0, 150, 0, 35)
@@ -85,7 +85,7 @@ for i, tabName in ipairs(SidebarButtons) do
     end)
     if i == 1 then sBtn.TextColor3 = ACCENT_GOLD; sBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 20) end
 end
--- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 3 ]]
+-- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 3 ]]
 local ToggleButton = Instance.new("TextButton"); ToggleButton.Size = UDim2.new(1, 0, 0, 28); ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM SYSTEM: OFF"; ToggleButton.TextColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.TextSize = 9; ToggleButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 4)
 local DropdownButton = Instance.new("TextButton"); DropdownButton.Position = UDim2.new(0, 0, 0, 34); DropdownButton.Size = UDim2.new(1, 0, 0, 24); DropdownButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "SELECT TARGETS ▼"; DropdownButton.TextColor3 = TEXT_DARK; DropdownButton.TextSize = 9; DropdownButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 4)
 local ListContainer = Instance.new("ScrollingFrame"); ListContainer.Position = UDim2.new(0, 0, 0, 62); ListContainer.Size = UDim2.new(1, 0, 1, -62); ListContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 2; ListContainer.Visible = false; ListContainer.Parent = SubFrames["AUTO FARM"]
@@ -127,7 +127,7 @@ local function ScanCurrentInventory()
     if bp then for _, t in pairs(bp:GetChildren()) do check(t) end end
     if char then for _, t in pairs(char:GetChildren()) do check(t) end end
 end
--- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 4 ]]
+-- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 4 ]]
 local function BuildMultiRakUI()
     for _, child in pairs(MasterScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
     ScanCurrentInventory()
@@ -177,7 +177,7 @@ local function BuildMultiRakUI()
 end
 
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
--- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 5 ]]
+-- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 5 ]]
 local function checkItemInBackpackClean(cleanName)
     local bp = LocalPlayer:FindFirstChild("Backpack")
     local char = LocalPlayer.Character
@@ -238,8 +238,8 @@ OpenButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.Use
 game:GetService("UserInputService").InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then if floatToggle then local delta = input.Position - floatStart; OpenButton.Position = UDim2.new(floatStartPos.X.Scale, floatStartPos.X.Offset + delta.X, floatStartPos.Y.Scale, floatStartPos.Y.Offset + delta.Y) end end end)
 
 RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF" if not _G.AlitHubRestockActive then BuildMultiRakUI() end end)
--- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 6 ]]
--- MURNI MENDETEKSI KEBERADAAN MODEL MAKANAN FISIK DI DALAM SLOT SEBAGAI STATUS ISIAN (ANTI-SPAM SLOT 1 SINKRON)
+-- [[ ALIT HUB V3 - DATA VALUE SLOT LOCK - PART 6 ]]
+-- MURNI MENGUNCI DATA NILAI ASLI FILE PROYEK: Mencegah rebutan teleportasi total dan memulihkan tombol Auto Farm
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -250,7 +250,7 @@ task.spawn(function()
         if root and hum then
             local actionExecuted = false
             
-            -- [[ PRIORITAS 1: EVALUASI KIOS RESTOCK (DETEKSI MODEL FISIK RBXL) ]]
+            -- [[ PRIORITAS 1: OTOMATISASI KIOS MURNI DATA LOCK ]]
             if _G.AlitHubRestockActive then
                 local kiosAktif = workspace:FindFirstChild("KiosAktif")
                 local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
@@ -263,17 +263,27 @@ task.spawn(function()
                             local slot = myKios:FindFirstChild(slotName) or myKios:FindFirstChild("slot " .. string.match(slotName, "%d+"))
                             
                             if slot then
-                                -- [[ PROCEDURAL RBXL VERIFICATION ]]: Memeriksa apakah ada objek makanan fisik yang menempel di nampan
-                                localhasFood = false
-                                for _, c in pairs(slot:GetChildren()) do
-                                    if c:IsA("Model") or c:IsA("BasePart") and not (c:IsA("ProximityPrompt") or c:IsA("Attachment") or c.Name == "Part" or c.Name == slot.Name) then
-                                        localhasFood = true
-                                        break
+                                -- [[ PROSEDURAL DATA VERIFICATION ]]: Membaca objek penanda nilai aslinya murni dari game Anda
+                                local dataValueObj = slot:FindFirstChild("Makanan") or slot:FindFirstChild("Masakan") or slot:FindFirstChildOfClass("StringValue") or slot:FindFirstChildOfClass("IntValue")
+                                local isSlotEmpty = true
+                                
+                                if dataValueObj then
+                                    -- Jika game menggunakan Object Value/String Value penanda nama masakan
+                                    if dataValueObj:IsA("ValueBase") and tostring(dataValueObj.Value) ~= "" and tostring(dataValueObj.Value) ~= "0" then
+                                        isSlotEmpty = false
+                                    -- Jika game memunculkan langsung Model Makanan fisik di atasnya
+                                    elseif dataValueObj:IsA("Model") then
+                                        isSlotEmpty = false
+                                    end
+                                else
+                                    -- Cadangan: Jika model makanan di-klon langsung menggunakan nama menu jualan Anda
+                                    for _, c in pairs(slot:GetChildren()) do
+                                        if c:IsA("Model") then isSlotEmpty = false break end
                                     end
                                 end
                                 
-                                -- HANYA TELEPORT JIKA RAK BENAR-BENAR KOSONG SECARA FISIK (Tidak ada model makanan)
-                                if not localhasFood then
+                                -- BOT HANYA BOLEH TELEPORT JIKA DATA SLOT MEMBUAT STATUS REAKSI: KOSONG MURNI
+                                if isSlotEmpty then
                                     local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
                                     if prompt and prompt.Enabled then
                                         local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
@@ -286,7 +296,7 @@ task.spawn(function()
                                                 if fireproximityprompt then fireproximityprompt(prompt) end
                                                 task.wait(0.4)
                                                 actionExecuted = true
-                                                break -- Sukses mengisi 1 slot, loop hancur untuk check ulang prioritas antrean dari slot atas
+                                                break -- Keluar untuk merefresh urutan prioritas antrean dari slot paling atas
                                             end
                                         end
                                     end
@@ -297,7 +307,7 @@ task.spawn(function()
                 end
             end
             
-            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN ]]
+            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN (TOMBOL KEMBALI NORMAL & FULL RESPONS) ]]
             if not actionExecuted and _G.AlitHubFarmActive and #SelectedTargets > 0 then
                 local folder = workspace:FindFirstChild("SpawnBahan")
                 if folder then
