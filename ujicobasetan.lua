@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 - PERMANENT CLEAN STRING LOCK - PART 1 ]]
+-- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 1 ]]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -25,8 +25,8 @@ local FIXED_RBXL_SLOTS = {
     "slot7", "slot8", "slot9", "slot10", "slot11", "slot12"
 }
 
-local AutoDetectedTools = {}      -- Menyimpan nama murni hasil filter (Tanpa xJumlah)
-local AutoDetectedRawNames = {}   -- Menyimpan nama asli game untuk proses equip
+local AutoDetectedTools = {}      
+local AutoDetectedRawNames = {}   
 local SlotSpecificTargets = {} 
 local SelectedTargets = {}
 
@@ -46,7 +46,7 @@ MainFrame.Name = "MainFrame"; MainFrame.Parent = ScreenGui; MainFrame.Background
 MainFrame.Position = GLOBAL_SAVED_POS; MainFrame.Size = UDim2.new(0, 350, 0, 220); MainFrame.BorderSizePixel = 1; MainFrame.BorderColor3 = ACCENT_GOLD
 MainFrame.ClipsDescendants = true; MainFrame.Active = true
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
--- [[ ALIT HUB V3 - PERMANENT CLEAN STRING LOCK - PART 2 ]]
+-- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 2 ]]
 local TopBar = Instance.new("Frame"); TopBar.Name = "TopBar"; TopBar.Parent = MainFrame; TopBar.BackgroundTransparency = 1; TopBar.Size = UDim2.new(1, 0, 0, 35)
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Name = "TitleLabel"; TitleLabel.Parent = TopBar; TitleLabel.BackgroundTransparency = 1; TitleLabel.Position = UDim2.new(0, 12, 0, 0); TitleLabel.Size = UDim2.new(0, 150, 0, 35)
@@ -85,7 +85,7 @@ for i, tabName in ipairs(SidebarButtons) do
     end)
     if i == 1 then sBtn.TextColor3 = ACCENT_GOLD; sBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 20) end
 end
--- [[ ALIT HUB V3 - PERMANENT CLEAN STRING LOCK - PART 3 ]]
+-- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 3 ]]
 local ToggleButton = Instance.new("TextButton"); ToggleButton.Size = UDim2.new(1, 0, 0, 28); ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM SYSTEM: OFF"; ToggleButton.TextColor3 = Color3.fromRGB(220, 53, 69); ToggleButton.TextSize = 9; ToggleButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 4)
 local DropdownButton = Instance.new("TextButton"); DropdownButton.Position = UDim2.new(0, 0, 0, 34); DropdownButton.Size = UDim2.new(1, 0, 0, 24); DropdownButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "SELECT TARGETS ▼"; DropdownButton.TextColor3 = TEXT_DARK; DropdownButton.TextSize = 9; DropdownButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 4)
 local ListContainer = Instance.new("ScrollingFrame"); ListContainer.Position = UDim2.new(0, 0, 0, 62); ListContainer.Size = UDim2.new(1, 0, 1, -62); ListContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 2; ListContainer.Visible = false; ListContainer.Parent = SubFrames["AUTO FARM"]
@@ -104,28 +104,22 @@ local UIMasterLayout = Instance.new("UIListLayout"); UIMasterLayout.Parent = Mas
 
 local PigLabel = Instance.new("TextLabel"); PigLabel.Size = UDim2.new(1, 0, 0, 30); PigLabel.BackgroundTransparency = 1; PigLabel.Font = Enum.Font.GothamBold; PigLabel.Text = "PIG CONFIGURATION PLACEHOLDER"; PigLabel.TextColor3 = TEXT_DARK; PigLabel.TextSize = 8; PigLabel.Parent = SubFrames["AUTO PIG"]
 local CookLabel = Instance.new("TextLabel"); CookLabel.Size = UDim2.new(1, 0, 0, 30); CookLabel.BackgroundTransparency = 1; CookLabel.Font = Enum.Font.GothamBold; CookLabel.Text = "COOK CONFIGURATION PLACEHOLDER"; CookLabel.TextColor3 = TEXT_DARK; CookLabel.TextSize = 8; CookLabel.Parent = SubFrames["AUTO COOK"]
--- [[ ALIT HUB V3 - PERMANENT CLEAN STRING LOCK - PART 4 ]]
--- FIXED RADAR SCANNER: Memotong murni teks jilid angka (x1896) agar nama bersih terdeteksi secara sah
+
 local function ScanCurrentInventory()
     table.clear(AutoDetectedTools)
     table.clear(AutoDetectedRawNames)
     local bp = LocalPlayer:FindFirstChild("Backpack")
     local char = LocalPlayer.Character
     local foundItems = {}
-    
     local function check(tool)
         if tool:IsA("Tool") then
             local nameLower = string.lower(tool.Name)
             if not (string.find(nameLower, "penyiram") or string.find(nameLower, "bibit") or string.find(nameLower, "lantern") or string.find(nameLower, "gerobak") or string.find(nameLower, "payung") or string.find(nameLower, "arwah") or string.find(nameLower, "pusaka") or string.find(nameLower, "tas")) then
-                -- PROSEDUR PEMBERSIHAN STRING: Memotong teks " x" beserta angka di belakangnya
                 local cleanName = string.gsub(tool.Name, "%s+x%d+", "")
-                cleanName = string.gsub(cleanName, "%s+$", "") -- Bersihkan sisa spasi di akhir
-                
-                AutoDetectedRawNames[cleanName] = tool.Name -- Simpan relasi nama asli untuk dipanggil equipItem
-                
+                cleanName = string.gsub(cleanName, "%s+$", "")
+                AutoDetectedRawNames[cleanName] = tool.Name
                 if not foundItems[cleanName] then
-                    foundItems[cleanName] = true
-                    table.insert(AutoDetectedTools, cleanName)
+                    foundItems[cleanName] = true; table.insert(AutoDetectedTools, cleanName)
                 end
             end
         end
@@ -133,7 +127,7 @@ local function ScanCurrentInventory()
     if bp then for _, t in pairs(bp:GetChildren()) do check(t) end end
     if char then for _, t in pairs(char:GetChildren()) do check(t) end end
 end
-
+-- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 4 ]]
 local function BuildMultiRakUI()
     for _, child in pairs(MasterScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
     ScanCurrentInventory()
@@ -165,7 +159,6 @@ local function BuildMultiRakUI()
                             local tBtn = Instance.new("TextButton"); tBtn.Size = UDim2.new(1, 0, 0, 14); tBtn.Font = Enum.Font.GothamSemibold; tBtn.TextSize = 7; tBtn.TextXAlignment = Enum.TextXAlignment.Left; tBtn.ZIndex = 6; tBtn.Parent = subContainer; Instance.new("UICorner", tBtn).CornerRadius = UDim.new(0, 4)
                             tBtn.Text = "  " .. tName
                             
-                            -- SINKRONISASI KUNCIAN PERMANEN: Murni membandingkan nama bersih agar kuncian emas tidak lepas saat jumlah barang berkurang
                             if SlotSpecificTargets[sName] == tName then
                                 tBtn.TextColor3 = Color3.fromRGB(15, 15, 15); tBtn.BackgroundColor3 = ACCENT_GOLD
                             else
@@ -184,8 +177,7 @@ local function BuildMultiRakUI()
 end
 
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
--- [[ ALIT HUB V3 - PERMANENT CLEAN STRING LOCK - PART 5 ]]
--- UTILITY FUNCTION: Mendeteksi kepemilikan item menggunakan pencarian pola string bersih murni
+-- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 5 ]]
 local function checkItemInBackpackClean(cleanName)
     local bp = LocalPlayer:FindFirstChild("Backpack")
     local char = LocalPlayer.Character
@@ -221,13 +213,6 @@ local function equipItemClean(cleanName)
             if tool and char:FindFirstChildOfClass("Humanoid") then char.Humanoid:EquipTool(tool); return true end
         end
     end
-    if char then
-        for _, t in pairs(char:GetChildren()) do
-            local c = string.gsub(t.Name, "%s+x%d+", "")
-            c = string.gsub(c, "%s+$", "")
-            if c == cleanName then return true end
-        end
-    end
     return false
 end
 
@@ -252,11 +237,9 @@ local floatToggle, floatStart, floatStartPos
 OpenButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then floatToggle = true; floatStart = input.Position; floatStartPos = OpenButton.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then floatToggle = false end end) end end)
 game:GetService("UserInputService").InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then if floatToggle then local delta = input.Position - floatStart; OpenButton.Position = UDim2.new(floatStartPos.X.Scale, floatStartPos.X.Offset + delta.X, floatStartPos.Y.Scale, floatStartPos.Y.Offset + delta.Y) end end end)
 
-ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); ToggleButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); ToggleButton.Text = _G.AlitHubFarmActive and "FARM SYSTEM: ON" or "FARM SYSTEM: OFF" end)
 RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = ACCENT_GOLD or Color3.fromRGB(220, 53, 69); RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF" if not _G.AlitHubRestockActive then BuildMultiRakUI() end end)
-LocalPlayer.Idled:Connect(function() if _G.AlitHubFarmActive or _G.AlitHubRestockActive then local vu = game:GetService("VirtualUser"); vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(0.5); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end end)
--- [[ ALIT HUB V3 - PERMANENT CLEAN STRING LOCK - PART 6 ]]
--- ENGINE ENGINE SINKRON: VALIDASI TEKS DAN NAMA BERSIH UNTUK RESTOCK MULTI-SLOT AKURAT (STOCK OVER FARM)
+-- [[ ALIT HUB V3 - PHYSICAL RBXL DETECT EDITION - PART 6 ]]
+-- MURNI MENDETEKSI KEBERADAAN MODEL MAKANAN FISIK DI DALAM SLOT SEBAGAI STATUS ISIAN (ANTI-SPAM SLOT 1 SINKRON)
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -267,7 +250,7 @@ task.spawn(function()
         if root and hum then
             local actionExecuted = false
             
-            -- [[ PRIORITAS 1: OTOMATISASI KIOS (MURNI BERDASARKAN HIERARKI KAKU KILAT FILE RBXL ANDA) ]]
+            -- [[ PRIORITAS 1: EVALUASI KIOS RESTOCK (DETEKSI MODEL FISIK RBXL) ]]
             if _G.AlitHubRestockActive then
                 local kiosAktif = workspace:FindFirstChild("KiosAktif")
                 local myKios = kiosAktif and (kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name))
@@ -275,31 +258,36 @@ task.spawn(function()
                     for _, slotName in ipairs(FIXED_RBXL_SLOTS) do
                         if not _G.AlitHubRestockActive then break end
                         
-                        -- Mengambil nama bersih target khusus milik nampan ini (Misal: "Sate Kepiting")
                         local targetCleanName = SlotSpecificTargets[slotName] or ""
-                        
-                        -- Validasi tas real-time menggunakan fungsi cek pola string murni
                         if targetCleanName ~= "" and checkItemInBackpackClean(targetCleanName) then
                             local slot = myKios:FindFirstChild(slotName) or myKios:FindFirstChild("slot " .. string.match(slotName, "%d+"))
-                            local prompt = slot and slot:FindFirstChildWhichIsA("ProximityPrompt", true)
                             
-                            if prompt and prompt.Enabled then
-                                -- VALIDASI TEKS ASLI PERMAINAN: Hanya teleport jika nampan berstatus kosong/perlu diisi
-                                local txt = string.lower(prompt.ObjectText .. " " .. prompt.ActionText)
-                                if string.find(txt, "kosong") or string.find(txt, "taruh") or string.find(txt, "isi") then
-                                    local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
-                                    if part and _G.AlitHubRestockActive then
-                                        -- Teleportasi instan mendarat tepat di depan koordinat nampan khusus milik slot ini
-                                        instantTeleportTo(root, part.CFrame)
-                                        task.wait(0.2)
-                                        
-                                        -- Menggenggam barang menggunakan pencarian pola nama bersih
-                                        if equipItemClean(targetCleanName) then
-                                            prompt:InputHoldBegin(); task.wait(0.4); prompt:InputHoldEnd()
-                                            if fireproximityprompt then fireproximityprompt(prompt) end
-                                            task.wait(0.4)
-                                            actionExecuted = true
-                                            break -- Sukses mengisi 1 slot, loop hancur untuk check ulang prioritas antrean dari slot atas secara mandiri
+                            if slot then
+                                -- [[ PROCEDURAL RBXL VERIFICATION ]]: Memeriksa apakah ada objek makanan fisik yang menempel di nampan
+                                localhasFood = false
+                                for _, c in pairs(slot:GetChildren()) do
+                                    if c:IsA("Model") or c:IsA("BasePart") and not (c:IsA("ProximityPrompt") or c:IsA("Attachment") or c.Name == "Part" or c.Name == slot.Name) then
+                                        localhasFood = true
+                                        break
+                                    end
+                                end
+                                
+                                -- HANYA TELEPORT JIKA RAK BENAR-BENAR KOSONG SECARA FISIK (Tidak ada model makanan)
+                                if not localhasFood then
+                                    local prompt = slot:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                    if prompt and prompt.Enabled then
+                                        local part = slot:IsA("BasePart") and slot or slot:FindFirstChildWhichIsA("BasePart", true)
+                                        if part and _G.AlitHubRestockActive then
+                                            instantTeleportTo(root, part.CFrame)
+                                            task.wait(0.2)
+                                            
+                                            if equipItemClean(targetCleanName) then
+                                                prompt:InputHoldBegin(); task.wait(0.4); prompt:InputHoldEnd()
+                                                if fireproximityprompt then fireproximityprompt(prompt) end
+                                                task.wait(0.4)
+                                                actionExecuted = true
+                                                break -- Sukses mengisi 1 slot, loop hancur untuk check ulang prioritas antrean dari slot atas
+                                            end
                                         end
                                     end
                                 end
@@ -309,7 +297,7 @@ task.spawn(function()
                 end
             end
             
-            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN (OTOMATIS BERJALAN JIKA SELURUH MEJA KIOS SUDAH PENUH) ]]
+            -- [[ PRIORITAS 2: LOGIKA FARMING HUTAN ]]
             if not actionExecuted and _G.AlitHubFarmActive and #SelectedTargets > 0 then
                 local folder = workspace:FindFirstChild("SpawnBahan")
                 if folder then
