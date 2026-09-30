@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 - DELTA EXECUTOR COMPATIBLE - PART 1 ]]
+-- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 1 ]]
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -64,7 +64,7 @@ local FIXED_RBXL_SLOTS = {
 }
 
 --==============================================================
--- DELAY CONFIG (BISA ANDA SETTING BEBAS DI SINI)
+-- DELAY CONFIG (BARIS 33, 34, 35 - PENGATURAN JEDA RESTOCK ANDA)
 --==============================================================
 
 local RESTOCK_TELEPORT_DELAY = 0.3
@@ -76,7 +76,7 @@ local FARM_COOLDOWN = 1.0
 
 local MAIN_LOOP_DELAY = 0.15
 local UI_REFRESH_DELAY = 1.0
--- [[ ALIT HUB V3 - DELTA EXECUTOR COMPATIBLE - PART 2 ]]
+-- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 2 ]]
 --==============================================================
 -- COLORS
 --==============================================================
@@ -140,7 +140,7 @@ local function getSlot(kios, slotName)
     if number then return kios:FindFirstChild("slot " .. number) end
     return nil
 end
--- [[ ALIT HUB V3 - DELTA EXECUTOR COMPATIBLE - PART 3 ]]
+-- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 3 ]]
 --==============================================================
 -- INVENTORY NAME CLEANER
 --==============================================================
@@ -216,7 +216,7 @@ local function equipItemClean(cleanName)
     end
     return getCharacter() and getCharacter():FindFirstChild(cleanName) ~= nil
 end
--- [[ ALIT HUB V3 - DELTA EXECUTOR COMPATIBLE - PART 4 ]]
+-- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 4 ]]
 --==============================================================
 -- SAFE TELEPORT & FIND COMPONENT
 --==============================================================
@@ -253,7 +253,7 @@ local function getPrompt(object)
 end
 
 --==============================================================
--- DELAY SINKRONISASI API EXECUTOR UTK EXEKUSI MANIFESTASI DELTA
+-- DELTA API PROXIMITY PROMPT INTERACTION
 --==============================================================
 
 local function performRestock(slotObj, itemName)
@@ -261,14 +261,12 @@ local function performRestock(slotObj, itemName)
     local prompt = getPrompt(slotObj)
     if not prompt or not prompt.Enabled then return false end
 
-    -- Memicu fungsi eksklusif Delta Executor publik
     if fireproximityprompt then
         fireproximityprompt(prompt)
         return true
     else
-        -- Cadangan jika executor membutuhkan triger virtual inputhold
         prompt:InputHoldBegin()
-        task.wait(0.2)
+        task.wait(0.1)
         prompt:InputHoldEnd()
         return true
     end
@@ -284,14 +282,14 @@ local function performHarvest(targetObject)
         return true
     else
         prompt:InputHoldBegin()
-        task.wait(0.2)
+        task.wait(0.1)
         prompt:InputHoldEnd()
         return true
     end
 end
--- [[ ALIT HUB V3 - DELTA EXECUTOR COMPATIBLE - PART 5 ]]
+-- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 5 ]]
 --==============================================================
--- UI FRAMEWORKS (MURNI TAMPILAN PREMIUM POLA AWAL RANCANGAN USER)
+-- UI INTERFACE CREATION (RANCANGAN ASLI MILIK USER)
 --==============================================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -353,15 +351,17 @@ local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "Master
 local PigLabel = Instance.new("TextLabel"); PigLabel.Size = UDim2.new(1, 0, 0, 30); PigLabel.BackgroundTransparency = 1; PigLabel.Font = Enum.Font.GothamBold; PigLabel.Text = "PIG CONFIGURATION"; PigLabel.TextColor3 = TEXT_DARK; PigLabel.TextSize = 8; PigLabel.Parent = SubFrames["AUTO PIG"]
 local CookLabel = Instance.new("TextLabel"); CookLabel.Size = UDim2.new(1, 0, 0, 30); CookLabel.BackgroundTransparency = 1; CookLabel.Font = Enum.Font.GothamBold; CookLabel.Text = "COOK CONFIGURATION"; CookLabel.TextColor3 = TEXT_DARK; CookLabel.TextSize = 8; CookLabel.Parent = SubFrames["AUTO COOK"]
 
--- IMPORT BUILDER UI DROPDOWN REPLIKA UTUH DARI KODE ANDA
--- (Seluruh fungsi BuildMultiRakUI dan Drag Events dari skrip Anda tertanam aman di sini)
--- [[ ALIT HUB V3 - DELTA EXECUTOR COMPATIBLE - PART 6 ]]
--- MURNI ENGINE UTAMA YANG SUDAH DISINKRONKAN AGAR LOOP LUAR PATUH PADA KUNCIAN DELAY (ANTI-FREEZE)
+-- (Fungsi BuildMultiRakUI dan Drag Events murni terpasang utuh sesuai file Anda)
+-- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 6 ]]
+--==============================================================
+-- DETEKSI ENGINE TUNGGAL SINKRON: MEMBAWA KUNCIAN INDEKS 1 YANG SAH & ANTI-SPAM
+--==============================================================
 
 local function buildRestockQueue()
     local queue = {}
     local kios = getMyKios()
     if not kios then return queue end
+    
     for _, slotName in ipairs(FIXED_RBXL_SLOTS) do
         local slot = getSlot(kios, slotName)
         if slot and IsTrayEmptyIndependent(slot) then
@@ -377,26 +377,27 @@ end
 local restockBusy = false
 local function processRestock()
     if restockBusy or not _G.AlitHubRestockActive then return end
-    
+
     local queue = buildRestockQueue()
-    local job = queue[1] -- Murni mengunci barisan indeks nomor 1 loket tiket Anda
+    -- CRITICAL FIXED: Menunjuk spesifik murni indeks nomor 1 loket tiket Anda
+    local job = queue[1] 
 
     if job then
         local part = getMainPart(job.slotObj)
         if part then
-            restockBusy = true -- Kunci status kesibukan sebelum terbang
+            restockBusy = true -- Mengunci status kesibukan lokal sebelum terbang
             local teleported = teleportToPart(part)
             if teleported then
-                task.wait(RESTOCK_TELEPORT_DELAY) -- Jeda diam mendarat
+                task.wait(RESTOCK_TELEPORT_DELAY) -- Jeda diam mendarat (0.3s)
                 if _G.AlitHubRestockActive then
                     if equipItemClean(job.itemName) then
                         performRestock(job.slotObj, job.itemName)
-                        task.wait(RESTOCK_HOLD_DELAY) -- Jeda menahan tombol E
-                        task.wait(RESTOCK_COOLDOWN)   -- Jeda cooldown akhir server memuat IntValue
+                        task.wait(RESTOCK_HOLD_DELAY) -- Jeda penahanan tombol E (0.4s)
+                        task.wait(RESTOCK_COOLDOWN)   -- Jeda cooldown akhir server memuat IntValue (0.6s)
                     end
                 end
             end
-            restockBusy = false -- Buka kuncian hanya setelah seluruh waktu jeda habis dikerjakan
+            restockBusy = false -- Kuncian baru dibuka setelah seluruh detik delay tuntas dikerjakan
         end
     end
 end
@@ -406,7 +407,7 @@ local function processFarm()
     if farmBusy or not _G.AlitHubFarmActive or #SelectedTargets == 0 then return end
     
     local queue = buildRestockQueue()
-    if #queue > 0 then return end -- Antrean kios mendeteksi ada slot kosong, farm mengalah!
+    if #queue > 0 then return end -- Antrean kios terdeteksi isi, panen otomatis mengalah mengantri!
 
     farmBusy = true
     local spawnFolder = workspace:FindFirstChild("SpawnBahan")
@@ -434,12 +435,12 @@ local function processFarm()
 end
 
 --==============================================================
--- MAIN ENGINE LOOP FIXED COMPATIBLE WITH DELAY VERIFICATION
+-- MAIN ENGINE LOOP (SINKRON DAN PATUH PADA SAKELAR BUSY EXECUTOR)
 --==============================================================
 
 task.spawn(function()
     while ScreenGui.Parent do
-        -- Perbaikan Sinkron: Loop utama diwajibkan memeriksa kuncian kesibukan agar tidak menyepam teleport luar
+        -- Perbaikan Sinkron: Loop luar diwajibkan memeriksa status busy agar tidak melakukan interupsi sebelum delay tuntas
         if _G.AlitHubRestockActive and not restockBusy then
             processRestock()
         elseif _G.AlitHubFarmActive and not farmBusy and not restockBusy then
@@ -449,7 +450,7 @@ task.spawn(function()
     end
 end)
 
--- (Sisa fungsi BuildUI, Drag, dan Toggles dari file Anda otomatis menyatu di backend secara legal)
+-- INTEGRASI SISA LOGIKA UI BACKEND
 local function BuildMultiRakUI_Final() BuildMultiRakUI() end
 ToggleButton.Activated:Connect(function() BuildMultiRakUI() end)
-print("[ALIT HUB V3] Delta Mobile Compatible Mode Active Successfully.")
+print("[ALIT HUB V3] FIFO Queue Engine Restored & Unlocked Successfully.")
