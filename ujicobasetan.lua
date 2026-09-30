@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 1 ]]
+-- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 1 ]]
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -64,7 +64,7 @@ local FIXED_RBXL_SLOTS = {
 }
 
 --==============================================================
--- DELAY CONFIG (BARIS 33, 34, 35 - PENGATURAN JEDA RESTOCK ANDA)
+-- DELAY CONFIG
 --==============================================================
 
 local RESTOCK_TELEPORT_DELAY = 0.3
@@ -76,7 +76,7 @@ local FARM_COOLDOWN = 1.0
 
 local MAIN_LOOP_DELAY = 0.15
 local UI_REFRESH_DELAY = 1.0
--- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 2 ]]
+-- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 2 ]]
 --==============================================================
 -- COLORS
 --==============================================================
@@ -140,7 +140,7 @@ local function getSlot(kios, slotName)
     if number then return kios:FindFirstChild("slot " .. number) end
     return nil
 end
--- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 3 ]]
+-- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 3 ]]
 --==============================================================
 -- INVENTORY NAME CLEANER
 --==============================================================
@@ -216,7 +216,7 @@ local function equipItemClean(cleanName)
     end
     return getCharacter() and getCharacter():FindFirstChild(cleanName) ~= nil
 end
--- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 4 ]]
+-- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 4 ]]
 --==============================================================
 -- SAFE TELEPORT & FIND COMPONENT
 --==============================================================
@@ -253,7 +253,7 @@ local function getPrompt(object)
 end
 
 --==============================================================
--- DELTA API PROXIMITY PROMPT INTERACTION
+-- DELTA INTERACTION TRIGGER
 --==============================================================
 
 local function performRestock(slotObj, itemName)
@@ -287,9 +287,9 @@ local function performHarvest(targetObject)
         return true
     end
 end
--- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 5 ]]
+-- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 5 ]]
 --==============================================================
--- UI INTERFACE CREATION (RANCANGAN ASLI MILIK USER)
+-- SCREEN GUI & INTERFACE BUILDER (MURNI STRUKTUR ASLI ANDA)
 --==============================================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -346,22 +346,66 @@ ListContainer.CanvasSize = UDim2.new(0, 0, 0, #TARGET_ORDER * 22)
 DropdownButton.Activated:Connect(function() ListContainer.Visible = not ListContainer.Visible; DropdownButton.Text = ListContainer.Visible and "SELECT TARGETS ▲" or "SELECT TARGETS ▼" end)
 
 local RestockButton = Instance.new("TextButton"); RestockButton.Size = UDim2.new(1, 0, 0, 28); RestockButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); RestockButton.Font = Enum.Font.GothamBold; RestockButton.Text = "RESTOCK KIOS: OFF"; RestockButton.TextColor3 = OFF_RED; RestockButton.TextSize = 9; RestockButton.Parent = SubFrames["AUTO STOCK"]; Instance.new("UICorner", RestockButton).CornerRadius = UDim.new(0, 4)
-local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "MasterScroll"; MasterScroll.Position = UDim2.new(0, 0, 0, 34); MasterScroll.Size = UDim2.new(1, 0, 1, -38); MasterScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 10); MasterScroll.BorderSizePixel = 0; MasterScroll.ScrollBarThickness = 3; MasterScroll.Parent = SubFrames["AUTO STOCK"]; Instance.new("UIListLayout", MasterScroll).Padding = UDim.new(0, 4)
+local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "MasterScroll"; MasterScroll.Position = UDim2.new(0, 0, 0, 34); MasterScroll.Size = UDim2.new(1, 0, 1, -38); MasterScroll.BackgroundColor3 = Color3.fromRGB(10, 10, 10); MasterScroll.BorderSizePixel = 0; MasterScroll.ScrollBarThickness = 3; MasterScroll.Parent = SubFrames["AUTO STOCK"]; local UIMasterLayout = Instance.new("UIListLayout"); UIMasterLayout.Parent = MasterScroll; UIMasterLayout.Padding = UDim.new(0, 4)
 
 local PigLabel = Instance.new("TextLabel"); PigLabel.Size = UDim2.new(1, 0, 0, 30); PigLabel.BackgroundTransparency = 1; PigLabel.Font = Enum.Font.GothamBold; PigLabel.Text = "PIG CONFIGURATION"; PigLabel.TextColor3 = TEXT_DARK; PigLabel.TextSize = 8; PigLabel.Parent = SubFrames["AUTO PIG"]
 local CookLabel = Instance.new("TextLabel"); CookLabel.Size = UDim2.new(1, 0, 0, 30); CookLabel.BackgroundTransparency = 1; CookLabel.Font = Enum.Font.GothamBold; CookLabel.Text = "COOK CONFIGURATION"; CookLabel.TextColor3 = TEXT_DARK; CookLabel.TextSize = 8; CookLabel.Parent = SubFrames["AUTO COOK"]
+-- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 6 ]]
+--==============================================================
+-- DROPDOWN SLOT BUILDER & MAIN AUTOMATION LOOP ENGINE
+--==============================================================
 
--- (Fungsi BuildMultiRakUI dan Drag Events murni terpasang utuh sesuai file Anda)
--- [[ ALIT HUB V3 - DELTA QUEUE REPAIRED - PART 6 ]]
---==============================================================
--- DETEKSI ENGINE TUNGGAL SINKRON: MEMBAWA KUNCIAN INDEKS 1 YANG SAH & ANTI-SPAM
---==============================================================
+local function BuildMultiRakUI()
+    for _, child in ipairs(MasterScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
+    CurrentKios = getMyKios()
+    ScanCurrentInventory()
+    if not CurrentKios then
+        local msg = Instance.new("TextLabel"); msg.Size = UDim2.new(1, -10, 0, 30); msg.BackgroundTransparency = 1; msg.Text = "KIOS BELUM DITEMUKAN"; msg.TextColor3 = OFF_RED; msg.Font = Enum.Font.GothamBold; msg.TextSize = 8; msg.Parent = MasterScroll; return
+    end
+    for slotIndex, slotName in ipairs(FIXED_RBXL_SLOTS) do
+        local slotObj = getSlot(CurrentKios, slotName)
+        if slotObj then
+            if SlotSpecificTargets[slotName] == nil then SlotSpecificTargets[slotName] = "" end
+            local row = Instance.new("Frame"); row.Name = slotName .. "Row"; row.LayoutOrder = slotIndex; row.Size = UDim2.new(1, -4, 0, 32); row.BackgroundColor3 = PANEL_COLOR; row.Parent = MasterScroll; Instance.new("UICorner", row).CornerRadius = UDim.new(0, 4)
+            local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(0, 60, 1, 0); lbl.Position = UDim2.new(0, 6, 0, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.GothamBold; lbl.Text = string.upper(slotName); lbl.TextColor3 = TEXT_LIGHT; lbl.TextSize = 8; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Parent = row
+            local dwn = Instance.new("TextButton"); dwn.Size = UDim2.new(1, -70, 0, 20); dwn.Position = UDim2.new(0, 64, 0, 6); dwn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); dwn.Font = Enum.Font.GothamSemibold; dwn.Text = SlotSpecificTargets[slotName] ~= "" and SlotSpecificTargets[slotName] .. " ▼" or "NONE ▼"; dwn.TextColor3 = ACCENT_GOLD; dwn.TextSize = 7; dwn.Parent = row; Instance.new("UICorner", dwn).CornerRadius = UDim.new(0, 4)
+            local opt = Instance.new("ScrollingFrame"); opt.Size = UDim2.new(1, -10, 0, 70); opt.Position = UDim2.new(0, 5, 0, 34); opt.BackgroundColor3 = Color3.fromRGB(15, 15, 15); opt.BorderSizePixel = 0; opt.ScrollBarThickness = 2; opt.Visible = false; opt.ZIndex = 10; opt.Parent = row; Instance.new("UIListLayout", opt).Padding = UDim.new(0, 2)
+            local function closeOptions() opt.Visible = false; row.Size = UDim2.new(1, -4, 0, 32) end
+            local function makeOption(text, callback)
+                local btnOpt = Instance.new("TextButton"); btnOpt.Size = UDim2.new(1, 0, 0, 18); btnOpt.BackgroundColor3 = Color3.fromRGB(25, 25, 25); btnOpt.Text = "  " .. text; btnOpt.TextColor3 = TEXT_LIGHT; btnOpt.Font = Enum.Font.GothamSemibold; btnOpt.TextSize = 7; btnOpt.TextXAlignment = Enum.TextXAlignment.Left; btnOpt.ZIndex = 11; btnOpt.Parent = opt; Instance.new("UICorner", btnOpt).CornerRadius = UDim.new(0, 3); btnOpt.Activated:Connect(callback)
+            end
+            dwn.Activated:Connect(function()
+                if opt.Visible then closeOptions() return end
+                for _, child in ipairs(opt:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+                ScanCurrentInventory()
+                makeOption("NONE", function() SlotSpecificTargets[slotName] = ""; dwn.Text = "NONE ▼"; closeOptions() end)
+                for _, itemName in ipairs(AutoDetectedTools) do
+                    local capturedName = itemName
+                    makeOption(capturedName, function() SlotSpecificTargets[slotName] = capturedName; dwn.Text = capturedName .. " ▼"; closeOptions() end)
+                end
+                opt.CanvasSize = UDim2.new(0, 0, 0, (#AutoDetectedTools + 1) * 20); opt.Visible = true; row.Size = UDim2.new(1, -4, 0, 108)
+            end)
+        end
+    end
+    MasterScroll.CanvasSize = UDim2.new(0, 0, 0, UIMasterLayout.AbsoluteContentSize.Y + 10)
+end
+
+local dragToggle = false; local dragStart = nil; local startPos = nil
+MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end) end end)
+UserInputService.InputChanged:Connect(function(input) if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then local delta = input.Position - dragStart; MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
+
+local openDrag = false; local openStart = nil; local openStartPos = nil
+OpenButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then openDrag = true; openStart = input.Position; openStartPos = OpenButton.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then openDrag = false end end) end end)
+UserInputService.InputChanged:Connect(function(input) if openDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then local delta = input.Position - openStart; OpenButton.Position = UDim2.new(openStartPos.X.Scale, openStartPos.X.Offset + delta.X, openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y) end end)
+
+ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); ToggleButton.TextColor3 = _G.AlitHubFarmActive and ON_GREEN or OFF_RED; ToggleButton.Text = _G.AlitHubFarmActive and "FARM SYSTEM: ON" or "FARM SYSTEM: OFF" end)
+RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = _G.AlitHubRestockActive and ON_GREEN or OFF_RED; RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF" if not _G.AlitHubRestockActive then BuildMultiRakUI() end end)
+LocalPlayer.CharacterAdded:Connect(function() task.wait(1); if _G.AlitHubRestockActive or _G.AlitHubFarmActive then CurrentKios = getMyKios() end end)
 
 local function buildRestockQueue()
     local queue = {}
     local kios = getMyKios()
     if not kios then return queue end
-    
     for _, slotName in ipairs(FIXED_RBXL_SLOTS) do
         local slot = getSlot(kios, slotName)
         if slot and IsTrayEmptyIndependent(slot) then
@@ -377,27 +421,23 @@ end
 local restockBusy = false
 local function processRestock()
     if restockBusy or not _G.AlitHubRestockActive then return end
-
     local queue = buildRestockQueue()
-    -- CRITICAL FIXED: Menunjuk spesifik murni indeks nomor 1 loket tiket Anda
-    local job = queue[1] 
+    local job = queue[1] -- PENGUNCIAN INDEKS NOMOR 1
 
     if job then
         local part = getMainPart(job.slotObj)
         if part then
-            restockBusy = true -- Mengunci status kesibukan lokal sebelum terbang
+            restockBusy = true
             local teleported = teleportToPart(part)
             if teleported then
-                task.wait(RESTOCK_TELEPORT_DELAY) -- Jeda diam mendarat (0.3s)
-                if _G.AlitHubRestockActive then
-                    if equipItemClean(job.itemName) then
-                        performRestock(job.slotObj, job.itemName)
-                        task.wait(RESTOCK_HOLD_DELAY) -- Jeda penahanan tombol E (0.4s)
-                        task.wait(RESTOCK_COOLDOWN)   -- Jeda cooldown akhir server memuat IntValue (0.6s)
-                    end
+                task.wait(RESTOCK_TELEPORT_DELAY)
+                if _G.AlitHubRestockActive and equipItemClean(job.itemName) then
+                    performRestock(job.slotObj, job.itemName)
+                    task.wait(RESTOCK_HOLD_DELAY)
+                    task.wait(RESTOCK_COOLDOWN)
                 end
             end
-            restockBusy = false -- Kuncian baru dibuka setelah seluruh detik delay tuntas dikerjakan
+            restockBusy = false
         end
     end
 end
@@ -405,26 +445,21 @@ end
 local farmBusy = false
 local function processFarm()
     if farmBusy or not _G.AlitHubFarmActive or #SelectedTargets == 0 then return end
-    
     local queue = buildRestockQueue()
-    if #queue > 0 then return end -- Antrean kios terdeteksi isi, panen otomatis mengalah mengantri!
+    if #queue > 0 then return end
 
     farmBusy = true
     local spawnFolder = workspace:FindFirstChild("SpawnBahan")
     if spawnFolder then
         for _, object in ipairs(spawnFolder:GetChildren()) do
             if not _G.AlitHubFarmActive or #buildRestockQueue() > 0 then break end
-            
             if table.find(SelectedTargets, object.Name) then
                 local prompt = getPrompt(object)
                 if prompt and prompt.Enabled then
                     local part = getMainPart(object)
                     if part and teleportToPart(part) then
                         task.wait(FARM_TELEPORT_DELAY)
-                        if _G.AlitHubFarmActive then
-                            performHarvest(object)
-                            task.wait(FARM_COOLDOWN)
-                        end
+                        if _G.AlitHubFarmActive then performHarvest(object); task.wait(FARM_COOLDOWN) end
                         break
                     end
                 end
@@ -435,12 +470,10 @@ local function processFarm()
 end
 
 --==============================================================
--- MAIN ENGINE LOOP (SINKRON DAN PATUH PADA SAKELAR BUSY EXECUTOR)
+-- MAIN OPERATION CHANNELS
 --==============================================================
-
 task.spawn(function()
     while ScreenGui.Parent do
-        -- Perbaikan Sinkron: Loop luar diwajibkan memeriksa status busy agar tidak melakukan interupsi sebelum delay tuntas
         if _G.AlitHubRestockActive and not restockBusy then
             processRestock()
         elseif _G.AlitHubFarmActive and not farmBusy and not restockBusy then
@@ -450,7 +483,15 @@ task.spawn(function()
     end
 end)
 
--- INTEGRASI SISA LOGIKA UI BACKEND
-local function BuildMultiRakUI_Final() BuildMultiRakUI() end
-ToggleButton.Activated:Connect(function() BuildMultiRakUI() end)
-print("[ALIT HUB V3] FIFO Queue Engine Restored & Unlocked Successfully.")
+task.spawn(function()
+    while ScreenGui.Parent do
+        if not _G.AlitHubRestockActive then
+            local kios = getMyKios()
+            if kios ~= CurrentKios then CurrentKios = kios; BuildMultiRakUI() end
+        end
+        task.wait(UI_REFRESH_DELAY)
+    end
+end)
+
+task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
+print("[ALIT HUB V3] UTUH 100% SUCCESS.")
