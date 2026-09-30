@@ -36,9 +36,9 @@ local GLOBAL_SAVED_POS = UDim2.new(0.5, -175, 0.3, -110)
 -- ====================================================================
 -- [[ TEMPAT MENGATUR DELAY / JEDA RESTOCK - BARIS 33, 34, 35 ]]
 -- ====================================================================
-local RESTOCK_TELEPORT_DELAY = 0.3  -- Jeda diam sesaat setelah mendarat di nampan
-local RESTOCK_HOLD_DELAY = 0.4      -- Durasi menahan tombol E jualan game
-local RESTOCK_COOLDOWN = 0.6        -- Jeda istirahat memberikan server waktu memuat data IntValue
+local RESTOCK_TELEPORT_DELAY = 0.2  -- Jeda diam sesaat setelah mendarat di nampan
+local RESTOCK_HOLD_DELAY = 0.6      -- Durasi menahan tombol E jualan game
+local RESTOCK_COOLDOWN = 1.5        -- Jeda istirahat memberikan server waktu memuat data IntValue
 -- ====================================================================
 
 local TELEPORT_DELAY = 0.2      
