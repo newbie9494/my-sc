@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 1 ]]
+-- [[ ALIT HUB V3 FIXED - 7-PART SEAMLESS SALIN - PART 1 ]]
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -57,26 +57,26 @@ local TARGET_ORDER = {
     "Kepiting Sungai",
     "Melati",
 }
-
+-- [[ ALIT HUB V3 FIXED - 7-PART SEAMLESS SALIN - PART 2 ]]
 local FIXED_RBXL_SLOTS = {
     "slot1", "slot2", "slot3", "slot4", "slot5", "slot6",
     "slot7", "slot8", "slot9", "slot10", "slot11", "slot12"
 }
 
 --==============================================================
--- DELAY CONFIG (COOLDOWN DIKUNCI 2.0 DETIK BERFUNGSI NYATA)
+-- DELAY CONFIG (COOLDOWN DIKUNCI 2.0 DETIK)
 --==============================================================
 
 local RESTOCK_TELEPORT_DELAY = 0.3
 local RESTOCK_HOLD_DELAY = 0.4
-local RESTOCK_COOLDOWN = 2.0  -- Jeda kaku pembuktian delay yang dijamin berfungsi nyata
+local RESTOCK_COOLDOWN = 2.0  
 
 local FARM_TELEPORT_DELAY = 0.2
-local FARM_COOLDOWN = 2.0
+local FARM_COOLDOWN = 1.0
 
 local MAIN_LOOP_DELAY = 0.15
 local UI_REFRESH_DELAY = 1.0
--- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 2 ]]
+
 --==============================================================
 -- COLORS
 --==============================================================
@@ -99,9 +99,9 @@ local SlotSpecificTargets = {}
 local SelectedTargets = {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -175, 0.3, -110)
 local CurrentKios = nil
-
+-- [[ ALIT HUB V3 FIXED - 7-PART SEAMLESS SALIN - PART 3 ]]
 --==============================================================
--- UTILITY
+-- UTILITY & SCANNERS
 --==============================================================
 
 local function getCharacter()
@@ -118,19 +118,11 @@ local function getHumanoid()
     return character and character:FindFirstChildOfClass("Humanoid")
 end
 
---==============================================================
--- KIOS FINDER (MURNI BERDASARKAN FORMAT IDENTIFIKASI TETAP ANDA)
---==============================================================
-
 local function getMyKios()
     local kiosAktif = workspace:FindFirstChild("KiosAktif")
     if not kiosAktif then return nil end
     return kiosAktif:FindFirstChild("Kios_" .. LocalPlayer.Name) or kiosAktif:FindFirstChild("Kios_panggil_" .. LocalPlayer.Name)
 end
-
---==============================================================
--- SLOT FINDER
---==============================================================
 
 local function getSlot(kios, slotName)
     if not kios then return nil end
@@ -140,10 +132,6 @@ local function getSlot(kios, slotName)
     if number then return kios:FindFirstChild("slot " .. number) end
     return nil
 end
--- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 3 ]]
---==============================================================
--- INVENTORY NAME CLEANER
---==============================================================
 
 local function cleanToolName(name)
     if not name then return "" end
@@ -151,10 +139,6 @@ local function cleanToolName(name)
     cleaned = string.gsub(cleaned, "%s+$", "")
     return cleaned
 end
-
---==============================================================
--- INVENTORY SCAN
---==============================================================
 
 local function ScanCurrentInventory()
     table.clear(AutoDetectedTools)
@@ -178,21 +162,19 @@ local function ScanCurrentInventory()
             end
         end
     end
-
     inspect(backpack)
     inspect(character)
     table.sort(AutoDetectedTools)
 end
-
+-- [[ ALIT HUB V3 FIXED - 7-PART SEAMLESS SALIN - PART 4 ]]
 --==============================================================
--- CHECK INVENTORY & EQUIP TOOL
+-- INTERACTION & DETECTORS
 --==============================================================
 
 local function checkItemInBackpackClean(cleanName)
     if not cleanName or cleanName == "" then return false end
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     local character = LocalPlayer.Character
-
     local function search(container)
         if not container then return false end
         for _, object in ipairs(container:GetChildren()) do
@@ -216,10 +198,6 @@ local function equipItemClean(cleanName)
     end
     return getCharacter() and getCharacter():FindFirstChild(cleanName) ~= nil
 end
--- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 4 ]]
---==============================================================
--- SAFE TELEPORT & FIND COMPONENT
---==============================================================
 
 local function teleportToPart(part)
     if not part then return false end
@@ -237,7 +215,6 @@ local function getMainPart(object)
     return object:FindFirstChildWhichIsA("BasePart", true)
 end
 
--- PEMINDAIAN INDIKATOR FISIK INTVALUE STOK SESUAI DATA ALUR SAKTI ANDA
 local function IsTrayEmptyIndependent(slotObj)
     if not slotObj then return true end
     local stokFolder = slotObj:FindFirstChild("Stok")
@@ -253,44 +230,24 @@ local function getPrompt(object)
     return object:FindFirstChildWhichIsA("ProximityPrompt", true)
 end
 
---==============================================================
--- EXECUTOR API INTERACTION
---==============================================================
-
 local function performRestock(slotObj, itemName)
     if not slotObj then return false end
     local prompt = getPrompt(slotObj)
     if not prompt or not prompt.Enabled then return false end
-
-    if fireproximityprompt then
-        fireproximityprompt(prompt)
-        return true
-    else
-        prompt:InputHoldBegin()
-        task.wait(0.1)
-        prompt:InputHoldEnd()
-        return true
-    end
+    if fireproximityprompt then fireproximityprompt(prompt) return true
+    else prompt:InputHoldBegin() task.wait(0.1) prompt:InputHoldEnd() return true end
 end
 
 local function performHarvest(targetObject)
     if not targetObject then return false end
     local prompt = getPrompt(targetObject)
     if not prompt or not prompt.Enabled then return false end
-
-    if fireproximityprompt then
-        fireproximityprompt(prompt)
-        return true
-    else
-        prompt:InputHoldBegin()
-        task.wait(0.1)
-        prompt:InputHoldEnd()
-        return true
-    end
+    if fireproximityprompt then fireproximityprompt(prompt) return true
+    else prompt:InputHoldBegin() task.wait(0.1) prompt:InputHoldEnd() return true end
 end
--- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 5 ]]
+-- [[ ALIT HUB V3 FIXED - 7-PART SEAMLESS SALIN - PART 5 ]]
 --==============================================================
--- UI FRAMEWORKS INTERFACE CREATION (MURNI REPLIKA UTUH ASLI ANDA)
+-- UI FRAMEWORKS FRAME BUILDER
 --==============================================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -333,6 +290,10 @@ end
 local ToggleButton = Instance.new("TextButton"); ToggleButton.Size = UDim2.new(1, 0, 0, 28); ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM SYSTEM: OFF"; ToggleButton.TextColor3 = OFF_RED; ToggleButton.TextSize = 9; ToggleButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 4)
 local DropdownButton = Instance.new("TextButton"); DropdownButton.Position = UDim2.new(0, 0, 0, 34); DropdownButton.Size = UDim2.new(1, 0, 0, 24); DropdownButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "SELECT TARGETS ▼"; DropdownButton.TextColor3 = TEXT_LIGHT; DropdownButton.TextSize = 9; DropdownButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 4)
 local ListContainer = Instance.new("ScrollingFrame"); ListContainer.Position = UDim2.new(0, 0, 0, 62); ListContainer.Size = UDim2.new(1, 0, 1, -62); ListContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 2; ListContainer.Visible = false; ListContainer.Parent = SubFrames["AUTO FARM"]; Instance.new("UIListLayout", ListContainer).Padding = UDim.new(0, 2)
+-- [[ ALIT HUB V3 FIXED - 7-PART SEAMLESS SALIN - PART 6 ]]
+--==============================================================
+-- UI DROPDOWN & MULTI-RAK LIST LIST GENERATOR
+--==============================================================
 
 for index, displayName in ipairs(TARGET_ORDER) do
     local workspaceName = TARGET_MAPPING[displayName]
@@ -351,10 +312,6 @@ local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "Master
 
 local PigLabel = Instance.new("TextLabel"); PigLabel.Size = UDim2.new(1, 0, 0, 30); PigLabel.BackgroundTransparency = 1; PigLabel.Font = Enum.Font.GothamBold; PigLabel.Text = "PIG CONFIGURATION"; PigLabel.TextColor3 = TEXT_DARK; PigLabel.TextSize = 8; PigLabel.Parent = SubFrames["AUTO PIG"]
 local CookLabel = Instance.new("TextLabel"); CookLabel.Size = UDim2.new(1, 0, 0, 30); CookLabel.BackgroundTransparency = 1; CookLabel.Font = Enum.Font.GothamBold; CookLabel.Text = "COOK CONFIGURATION"; CookLabel.TextColor3 = TEXT_DARK; CookLabel.TextSize = 8; CookLabel.Parent = SubFrames["AUTO COOK"]
--- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 6 ]]
---==============================================================
--- ENGINE FIFO ANTREAD DAN SISTEM KONFIRMASI STATUS (ANTI-SPAM TELEPORT)
---==============================================================
 
 local function BuildMultiRakUI()
     for _, child in ipairs(MasterScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
@@ -390,6 +347,10 @@ local function BuildMultiRakUI()
     end
     MasterScroll.CanvasSize = UDim2.new(0, 0, 0, UIMasterLayout.AbsoluteContentSize.Y + 10)
 end
+-- [[ ALIT HUB V3 FIXED - 7-PART SEAMLESS SALIN - PART 7 ]]
+--==============================================================
+-- EVENT DRAGS, TOGGLES, AND CENTRAL FIFO QUEUE ENGINE CONTROLLER
+--==============================================================
 
 local dragToggle = false; local dragStart = nil; local startPos = nil
 MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end) end end)
@@ -398,6 +359,23 @@ UserInputService.InputChanged:Connect(function(input) if dragToggle and (input.U
 local openDrag = false; local openStart = nil; local openStartPos = nil
 OpenButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then openDrag = true; openStart = input.Position; openStartPos = OpenButton.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then openDrag = false end end) end end)
 UserInputService.InputChanged:Connect(function(input) if openDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then local delta = input.Position - openStart; OpenButton.Position = UDim2.new(openStartPos.X.Scale, openStartPos.X.Offset + delta.X, openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y) end end)
+
+ToggleButton.Activated:Connect(function()
+    _G.AlitHubFarmActive = not _G.AlitHubFarmActive
+    ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15)
+    ToggleButton.TextColor3 = _G.AlitHubFarmActive and ON_GREEN or OFF_RED
+    ToggleButton.Text = _G.AlitHubFarmActive and "FARM SYSTEM: ON" or "FARM SYSTEM: OFF"
+end)
+
+RestockButton.Activated:Connect(function()
+    _G.AlitHubRestockActive = not _G.AlitHubRestockActive
+    RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15)
+    RestockButton.TextColor3 = _G.AlitHubRestockActive and ON_GREEN or OFF_RED
+    RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF"
+    if not _G.AlitHubRestockActive then BuildMultiRakUI() end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function() task.wait(1) if _G.AlitHubRestockActive or _G.AlitHubFarmActive then CurrentKios = getMyKios() end end)
 
 local function buildRestockQueue()
     local queue = {}
@@ -419,12 +397,12 @@ local restockBusy = false
 local function processRestock()
     if restockBusy or not _G.AlitHubRestockActive then return end
     local queue = buildRestockQueue()
-    local job = queue[1] -- Mengunci murni barisan indeks nomor 1 loket tiket Anda
+    local job = queue[1] -- FIXED MUTLAK: Mengunci alamat indeks 1 antrean loket jernih Anda
 
     if job then
         local part = getMainPart(job.slotObj)
         if part then
-            restockBusy = true -- KUNCI TOTAL SAKELAR KESIBUKAN INTERNAL LOKAL
+            restockBusy = true
             local teleported = teleportToPart(part)
             if teleported then
                 task.wait(RESTOCK_TELEPORT_DELAY)
@@ -433,20 +411,17 @@ local function processRestock()
                     task.wait(RESTOCK_HOLD_DELAY)
                     
                     -- ==============================================================
-                    -- [[ TAHAP KONFIRMASI STATUS FISIK MURNI SESUAI ALUR ANDA ]]
+                    -- [[ SISTEM KONFIRMASI STATE SAH SESUAI ALUR TERTULIS ANDA ]]
                     -- ==============================================================
-                    -- Bot dilarang keras pergi jika nampan masih terdeteksi kosong oleh folder Stok
-                    local maxRetryTime = tick() + 4.0 -- Batas waktu tunggu maksimal (Batas retry 4 detik)
+                    local maxRetryTime = tick() + 4.0
                     while IsTrayEmptyIndependent(job.slotObj) and tick() < maxRetryTime and _G.AlitHubRestockActive do
-                        task.wait(0.1) -- Karakter dipaksa mematung di depan rak sampai server merespons
+                        task.wait(0.1)
                     end
-                    
-                    -- JEDA COOLDOWN PASTI BERFUNGSI (KUNCIAN 2.0 DETIK ANDA BERJALAN NYATA)
-                    task.wait(RESTOCK_COOLDOWN)
+                    task.wait(RESTOCK_COOLDOWN) -- JEDA COOLDOWN 2.0 DETIK BERJALAN NYATA DI SINI
                     -- ==============================================================
                 end
             end
-            restockBusy = false -- SAKELAR DILEPAS, LOOP UTAMA BARU DIIZINKAN BERGERAK LAGI
+            restockBusy = false
         end
     end
 end
@@ -456,7 +431,6 @@ local function processFarm()
     if farmBusy or not _G.AlitHubFarmActive or #SelectedTargets == 0 then return end
     local queue = buildRestockQueue()
     if #queue > 0 then return end
-
     farmBusy = true
     local spawnFolder = workspace:FindFirstChild("SpawnBahan")
     if spawnFolder then
@@ -479,16 +453,12 @@ local function processFarm()
 end
 
 --==============================================================
--- CENTRAL OPERATION MAIN ENGINE (SINKRONISASI COOLDOWN TERKUNCI AMAN)
+-- CENTRAL ENGINE CHANNELS
 --==============================================================
 task.spawn(function()
     while ScreenGui.Parent do
-        -- Perbaikan Mutlak: Loop luar dilarang memicu fungsi jika status sakelar busy masih mengunci
-        if _G.AlitHubRestockActive and not restockBusy then
-            processRestock()
-        elseif _G.AlitHubFarmActive and not farmBusy and not restockBusy then
-            processFarm()
-        end
+        if _G.AlitHubRestockActive and not restockBusy then processRestock()
+        elseif _G.AlitHubFarmActive and not farmBusy and not restockBusy then processFarm() end
         task.wait(MAIN_LOOP_DELAY)
     end
 end)
@@ -502,3 +472,6 @@ task.spawn(function()
         task.wait(UI_REFRESH_DELAY)
     end
 end)
+
+task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
+print("[ALIT HUB V3] 100% COMPLETE. ALL LINES WITHIN AREA.")
