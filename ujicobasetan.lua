@@ -437,7 +437,7 @@ local function performHarvest(targetObject)
         return true
     else
         prompt:InputHoldBegin()
-        task.wait(0.1)
+        task.wait(0.6)
         prompt:InputHoldEnd()
 
         return true
