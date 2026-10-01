@@ -658,6 +658,115 @@ ListContainer.Parent = SubFrames["AUTO FARM"]
 Instance.new("UIListLayout", ListContainer).Padding = UDim.new(0, 2)
 
 --==============================================================
+-- AUTO FARM TARGET LIST
+--==============================================================
+
+local function RefreshTargetList()
+
+    for _, child in ipairs(ListContainer:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    for _, targetName in ipairs(TARGET_ORDER) do
+
+        local button = Instance.new("TextButton")
+        button.Name = targetName .. "Target"
+        button.Size = UDim2.new(1, -4, 0, 22)
+        button.BackgroundColor3 =
+            table.find(SelectedTargets, targetName)
+            and Color3.fromRGB(30, 25, 20)
+            or Color3.fromRGB(25, 25, 25)
+
+        button.Font = Enum.Font.GothamSemibold
+        button.Text = targetName
+        button.TextColor3 =
+            table.find(SelectedTargets, targetName)
+            and ACCENT_GOLD
+            or TEXT_LIGHT
+
+        button.TextSize = 8
+        button.Parent = ListContainer
+
+        Instance.new("UICorner", button).CornerRadius =
+            UDim.new(0, 3)
+
+        button.Activated:Connect(function()
+
+            local index = table.find(
+                SelectedTargets,
+                targetName
+            )
+
+            if index then
+
+                table.remove(
+                    SelectedTargets,
+                    index
+                )
+
+                button.BackgroundColor3 =
+                    Color3.fromRGB(25, 25, 25)
+
+                button.TextColor3 =
+                    TEXT_LIGHT
+
+            else
+
+                table.insert(
+                    SelectedTargets,
+                    targetName
+                )
+
+                button.BackgroundColor3 =
+                    Color3.fromRGB(30, 25, 20)
+
+                button.TextColor3 =
+                    ACCENT_GOLD
+            end
+
+            if #SelectedTargets > 0 then
+
+                DropdownButton.Text =
+                    "TARGET: "
+                    .. table.concat(
+                        SelectedTargets,
+                        ", "
+                    )
+                    .. " ▼"
+
+            else
+
+                DropdownButton.Text =
+                    "SELECT TARGETS ▼"
+
+            end
+        end)
+    end
+
+    ListContainer.CanvasSize =
+        UDim2.new(
+            0,
+            0,
+            0,
+            #TARGET_ORDER * 24
+        )
+end
+
+DropdownButton.Activated:Connect(function()
+
+    ListContainer.Visible =
+        not ListContainer.Visible
+
+    if ListContainer.Visible then
+        RefreshTargetList()
+    end
+end)
+
+RefreshTargetList()
+
+--==============================================================
 -- AUTO STOCK UI
 --==============================================================
 
