@@ -72,21 +72,16 @@ local FIXED_RBXL_SLOTS = {
 --==============================================================
 
 local RESTOCK_TELEPORT_DELAY = 0.3
-
--- E HOLD RESTOCK = 0.5 DETIK
 local RESTOCK_HOLD_DURATION = 0.5
-
 local RESTOCK_HOLD_DELAY = 0.4
-
--- JEDA 2 DETIK SETELAH BERHASIL / GAGAL
 local RESTOCK_COOLDOWN = 2.0
-local RESTOCK_RETRY_DELAY = 2.0
 
+local RESTOCK_MAX_ATTEMPTS = 3
 local RESTOCK_CHECK_DELAY = 0.1
 local RESTOCK_VERIFY_TIMEOUT = 4.0
 
 local FARM_TELEPORT_DELAY = 0.2
-local FARM_COOLDOWN = 2.0
+local FARM_COOLDOWN = 1.0
 
 local MAIN_LOOP_DELAY = 0.15
 local UI_REFRESH_DELAY = 1.0
@@ -251,27 +246,23 @@ local function equipItemClean(cleanName)
         return false
     end
 
-    -- Kalau sudah sedang dipakai
     local character = getCharacter()
 
     if character then
         for _, object in ipairs(character:GetChildren()) do
             if object:IsA("Tool")
                 and cleanToolName(object.Name) == cleanName then
-
                 return true
             end
         end
     end
 
-    -- Cari di Backpack
     for _, object in ipairs(backpack:GetChildren()) do
         if object:IsA("Tool")
             and cleanToolName(object.Name) == cleanName then
 
             humanoid:EquipTool(object)
 
-            -- Beri waktu untuk Roblox memindahkan Tool
             local verifyTimeout = tick() + 1.0
 
             while tick() < verifyTimeout do
@@ -283,7 +274,6 @@ local function equipItemClean(cleanName)
                     for _, equippedTool in ipairs(character:GetChildren()) do
                         if equippedTool:IsA("Tool")
                             and cleanToolName(equippedTool.Name) == cleanName then
-
                             return true
                         end
                     end
@@ -374,7 +364,6 @@ end
 
 --==============================================================
 -- RESTOCK
--- E SELALU HOLD 0.5 DETIK
 --==============================================================
 
 local function performRestock(slotObj, itemName)
@@ -389,7 +378,6 @@ local function performRestock(slotObj, itemName)
             "[ALIT RESTOCK] PROMPT TIDAK DITEMUKAN:",
             slotObj.Name
         )
-
         return false
     end
 
@@ -399,7 +387,6 @@ local function performRestock(slotObj, itemName)
             slotObj.Name,
             prompt.Name
         )
-
         return false
     end
 
@@ -416,14 +403,7 @@ local function performRestock(slotObj, itemName)
         prompt.HoldDuration
     )
 
-    -- SELALU gunakan InputHoldBegin
     prompt:InputHoldBegin()
-
-    print(
-        "[ALIT RESTOCK] E HOLD:",
-        slotObj.Name,
-        "| Durasi: 0.5"
-    )
 
     task.wait(RESTOCK_HOLD_DURATION)
 
@@ -465,7 +445,7 @@ local function performHarvest(targetObject)
 end
 
 --==============================================================
--- UI FRAMEWORKS FRAME BUILDER
+-- UI FRAMEWORK
 --==============================================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -659,6 +639,10 @@ Instance.new("UIListLayout", ListContainer).Padding = UDim.new(0, 2)
 
 --==============================================================
 -- AUTO FARM TARGET LIST
+-- PENTING:
+-- SelectedTargets menyimpan NILAI MAPPING:
+-- Spawn_Dupa, Spawn_Gagak, dst.
+-- BUKAN nama tampilan Dupa, Gagak, dst.
 --==============================================================
 
 local function RefreshTargetList()
@@ -671,18 +655,20 @@ local function RefreshTargetList()
 
     for _, targetName in ipairs(TARGET_ORDER) do
 
+        local targetObjectName = TARGET_MAPPING[targetName]
+
         local button = Instance.new("TextButton")
-        button.Name = targetName .. "Target"
+        button.Name = targetObjectName .. "Button"
         button.Size = UDim2.new(1, -4, 0, 22)
         button.BackgroundColor3 =
-            table.find(SelectedTargets, targetName)
+            table.find(SelectedTargets, targetObjectName)
             and Color3.fromRGB(30, 25, 20)
             or Color3.fromRGB(25, 25, 25)
 
         button.Font = Enum.Font.GothamSemibold
         button.Text = targetName
         button.TextColor3 =
-            table.find(SelectedTargets, targetName)
+            table.find(SelectedTargets, targetObjectName)
             and ACCENT_GOLD
             or TEXT_LIGHT
 
@@ -694,10 +680,11 @@ local function RefreshTargetList()
 
         button.Activated:Connect(function()
 
-            local index = table.find(
-                SelectedTargets,
-                targetName
-            )
+            local index =
+                table.find(
+                    SelectedTargets,
+                    targetObjectName
+                )
 
             if index then
 
@@ -716,7 +703,7 @@ local function RefreshTargetList()
 
                 table.insert(
                     SelectedTargets,
-                    targetName
+                    targetObjectName
                 )
 
                 button.BackgroundColor3 =
@@ -728,19 +715,32 @@ local function RefreshTargetList()
 
             if #SelectedTargets > 0 then
 
+                local displayNames = {}
+
+                for _, selectedObjectName in ipairs(SelectedTargets) do
+
+                    for displayName, mappedName in pairs(TARGET_MAPPING) do
+
+                        if mappedName == selectedObjectName then
+                            table.insert(
+                                displayNames,
+                                displayName
+                            )
+                            break
+                        end
+
+                    end
+                end
+
                 DropdownButton.Text =
                     "TARGET: "
-                    .. table.concat(
-                        SelectedTargets,
-                        ", "
-                    )
+                    .. table.concat(displayNames, ", ")
                     .. " ▼"
 
             else
 
                 DropdownButton.Text =
                     "SELECT TARGETS ▼"
-
             end
         end)
     end
@@ -750,7 +750,7 @@ local function RefreshTargetList()
             0,
             0,
             0,
-            #TARGET_ORDER * 24
+            (#TARGET_ORDER * 24) + 4
         )
 end
 
@@ -761,6 +761,39 @@ DropdownButton.Activated:Connect(function()
 
     if ListContainer.Visible then
         RefreshTargetList()
+        DropdownButton.Text =
+            "SELECT TARGETS ▲"
+    else
+
+        if #SelectedTargets > 0 then
+
+            local displayNames = {}
+
+            for _, selectedObjectName in ipairs(SelectedTargets) do
+
+                for displayName, mappedName in pairs(TARGET_MAPPING) do
+
+                    if mappedName == selectedObjectName then
+                        table.insert(
+                            displayNames,
+                            displayName
+                        )
+                        break
+                    end
+
+                end
+            end
+
+            DropdownButton.Text =
+                "TARGET: "
+                .. table.concat(displayNames, ", ")
+                .. " ▼"
+
+        else
+
+            DropdownButton.Text =
+                "SELECT TARGETS ▼"
+        end
     end
 end)
 
@@ -876,7 +909,7 @@ local function BuildMultiRakUI()
             dwn.Size = UDim2.new(1, -70, 0, 20)
             dwn.Position = UDim2.new(0, 64, 0, 6)
             dwn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            dwn.Font = Enum.Font.GothamSemibold
+
             dwn.Text =
                 SlotSpecificTargets[slotName] ~= ""
                 and SlotSpecificTargets[slotName] .. " ▼"
@@ -1129,7 +1162,6 @@ end)
 
 --==============================================================
 -- BUILD RESTOCK QUEUE
--- SLOT 1 -> SLOT 12
 --==============================================================
 
 local function buildRestockQueue()
@@ -1184,8 +1216,6 @@ local function processRestock()
     end
 
     local queue = buildRestockQueue()
-
-    -- SELALU ambil slot kosong pertama
     local job = queue[1]
 
     if not job then
@@ -1200,99 +1230,118 @@ local function processRestock()
 
     restockBusy = true
 
-    --==========================================================
-    -- TELEPORT HANYA SEKALI KE SLOT YANG SEDANG DIPROSES
-    --==========================================================
-
     local teleported = teleportToPart(part)
 
     if teleported then
 
         task.wait(RESTOCK_TELEPORT_DELAY)
 
-        --======================================================
-        -- SELAMA SLOT BELUM TERISI:
-        -- TETAP DI SLOT INI
-        -- TIDAK TELEPORT ULANG
-        --======================================================
-
-        while _G.AlitHubRestockActive
-            and IsTrayEmptyIndependent(job.slotObj) do
-
-            --==================================================
-            -- EQUIP ITEM
-            --==================================================
+        if _G.AlitHubRestockActive then
 
             local equipped = equipItemClean(job.itemName)
 
             if equipped then
 
-                --==================================================
-                -- TEKAN E
-                --==================================================
+                local filled = false
 
-                local restockPressed =
-                    performRestock(
-                        job.slotObj,
-                        job.itemName
-                    )
+                for attempt = 1, RESTOCK_MAX_ATTEMPTS do
 
-                --==================================================
-                -- TUNGGU 2 DETIK SETELAH PERCOBAAN
-                --==================================================
+                    if not _G.AlitHubRestockActive then
+                        break
+                    end
 
-                task.wait(RESTOCK_COOLDOWN)
-
-                --==================================================
-                -- CEK SLOT
-                --==================================================
-
-                if not IsTrayEmptyIndependent(job.slotObj) then
+                    if not IsTrayEmptyIndependent(job.slotObj) then
+                        filled = true
+                        break
+                    end
 
                     print(
-                        "[ALIT RESTOCK] BERHASIL:",
-                        job.slotName,
-                        "| Lanjut ke slot berikutnya setelah jeda 2 detik."
+                        "[ALIT RESTOCK] ATTEMPT:",
+                        attempt,
+                        "/",
+                        RESTOCK_MAX_ATTEMPTS,
+                        "| SLOT:",
+                        job.slotName
                     )
 
-                    break
+                    local restockPressed =
+                        performRestock(
+                            job.slotObj,
+                            job.itemName
+                        )
+
+                    if restockPressed then
+
+                        task.wait(RESTOCK_HOLD_DELAY)
+
+                        local verifyEnd =
+                            tick() + RESTOCK_VERIFY_TIMEOUT
+
+                        while
+                            IsTrayEmptyIndependent(job.slotObj)
+                            and tick() < verifyEnd
+                            and _G.AlitHubRestockActive
+                        do
+                            task.wait(RESTOCK_CHECK_DELAY)
+                        end
+
+                        if not IsTrayEmptyIndependent(job.slotObj) then
+
+                            filled = true
+
+                            print(
+                                "[ALIT RESTOCK] BERHASIL:",
+                                job.slotName
+                            )
+
+                            break
+                        end
+
+                        warn(
+                            "[ALIT RESTOCK] BELUM TERISI:",
+                            job.slotName,
+                            "| Attempt:",
+                            attempt
+                        )
+
+                    else
+
+                        warn(
+                            "[ALIT RESTOCK] GAGAL MENEKAN PROMPT:",
+                            job.slotName
+                        )
+                    end
+
+                    if attempt < RESTOCK_MAX_ATTEMPTS then
+                        task.wait(0.3)
+                    end
                 end
 
-                --==================================================
-                -- GAGAL / BELUM TERISI
-                -- Tetap di tempat.
-                -- Tidak teleport ulang.
-                -- Setelah 2 detik, loop mencoba lagi.
-                --==================================================
+                if filled then
+                    task.wait(RESTOCK_COOLDOWN)
+                else
 
-                warn(
-                    "[ALIT RESTOCK] BELUM TERISI:",
-                    job.slotName,
-                    "| Mencoba lagi setelah 2 detik."
-                )
+                    warn(
+                        "[ALIT RESTOCK] SLOT GAGAL SETELAH",
+                        RESTOCK_MAX_ATTEMPTS,
+                        "PERCOBAAN:",
+                        job.slotName
+                    )
+
+                    task.wait(1.0)
+                end
 
             else
 
-                --==================================================
-                -- EQUIP GAGAL
-                -- Tetap di slot yang sama.
-                -- Tunggu 2 detik lalu coba lagi.
-                --==================================================
-
                 warn(
                     "[ALIT RESTOCK] ITEM GAGAL DI-EQUIP:",
-                    job.itemName,
-                    "| Coba lagi setelah 2 detik."
+                    job.itemName
                 )
 
-                task.wait(RESTOCK_RETRY_DELAY)
+                task.wait(0.5)
             end
         end
     end
-
-    --==========================================================
-    -- SELESAI SLOT
-    --==========================================================
 
     restockBusy = false
 end
@@ -1314,7 +1363,6 @@ local function processFarm()
 
     local queue = buildRestockQueue()
 
-    -- Kalau ada slot kosong, farm berhenti.
     if #queue > 0 then
         return
     end
@@ -1334,7 +1382,16 @@ local function processFarm()
                 break
             end
 
-            if table.find(SelectedTargets, object.Name) then
+            -- SelectedTargets sekarang berisi:
+            -- Spawn_Dupa
+            -- Spawn_Gagak
+            -- Spawn_JamurKuburan
+            -- dst.
+
+            if table.find(
+                SelectedTargets,
+                object.Name
+            ) then
 
                 local prompt = getPrompt(object)
 
@@ -1382,15 +1439,11 @@ task.spawn(function()
 
             if #restockQueue > 0 then
 
-                -- Ada slot kosong
-                -- PRIORITAS RESTOCK
                 processRestock()
 
             elseif _G.AlitHubFarmActive
                 and not farmBusy then
 
-                -- Semua slot terisi
-                -- KEMBALI FARMING
                 processFarm()
             end
 
@@ -1398,8 +1451,6 @@ task.spawn(function()
             and not farmBusy
             and not restockBusy then
 
-            -- Restock OFF
-            -- Farming normal
             processFarm()
         end
 
@@ -1449,5 +1500,9 @@ print(
 )
 
 print(
-    "[ALIT HUB] Restock retry delay = 2 seconds tanpa teleport ulang."
+    "[ALIT HUB] Restock retry = 3 attempts without repeated teleport."
+)
+
+print(
+    "[ALIT HUB] Farm target mapping repaired."
 )
