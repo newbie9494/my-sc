@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 FIXED - MUTLAK QUEUE[1] FIX - PART 1 ]]
+-- [[ ALIT HUB V3 FIXED - EXACT REPAIR EDITION - PART 1 ]]
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -57,7 +57,7 @@ local TARGET_ORDER = {
     "Kepiting Sungai",
     "Melati",
 }
--- [[ ALIT HUB V3 FIXED - MUTLAK QUEUE[1] FIX - PART 2 ]]
+-- [[ ALIT HUB V3 FIXED - EXACT REPAIR EDITION - PART 2 ]]
 local FIXED_RBXL_SLOTS = {
     "slot1", "slot2", "slot3", "slot4", "slot5", "slot6",
     "slot7", "slot8", "slot9", "slot10", "slot11", "slot12"
@@ -72,7 +72,7 @@ local RESTOCK_HOLD_DELAY = 0.4
 local RESTOCK_COOLDOWN = 2.0  
 
 local FARM_TELEPORT_DELAY = 0.2
-local FARM_COOLDOWN = 1.0
+local FARM_COOLDOWN = 2.0
 
 local MAIN_LOOP_DELAY = 0.15
 local UI_REFRESH_DELAY = 1.0
@@ -99,7 +99,7 @@ local SlotSpecificTargets = {}
 local SelectedTargets = {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -175, 0.3, -110)
 local CurrentKios = nil
--- [[ ALIT HUB V3 FIXED - MUTLAK QUEUE[1] FIX - PART 3 ]]
+-- [[ ALIT HUB V3 FIXED - EXACT REPAIR EDITION - PART 3 ]]
 --==============================================================
 -- UTILITY & SCANNERS
 --==============================================================
@@ -166,7 +166,7 @@ local function ScanCurrentInventory()
     inspect(character)
     table.sort(AutoDetectedTools)
 end
--- [[ ALIT HUB V3 FIXED - MUTLAK QUEUE[1] FIX - PART 4 ]]
+-- [[ ALIT HUB V3 FIXED - EXACT REPAIR EDITION - PART 4 ]]
 --==============================================================
 -- INTERACTION & DETECTORS
 --==============================================================
@@ -245,7 +245,7 @@ local function performHarvest(targetObject)
     if fireproximityprompt then fireproximityprompt(prompt) return true
     else prompt:InputHoldBegin() task.wait(0.1) prompt:InputHoldEnd() return true end
 end
--- [[ ALIT HUB V3 FIXED - MUTLAK QUEUE[1] FIX - PART 5 ]]
+-- [[ ALIT HUB V3 FIXED - EXACT REPAIR EDITION - PART 5 ]]
 --==============================================================
 -- UI FRAMEWORKS FRAME BUILDER
 --==============================================================
@@ -290,7 +290,7 @@ end
 local ToggleButton = Instance.new("TextButton"); ToggleButton.Size = UDim2.new(1, 0, 0, 28); ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 15, 15); ToggleButton.Font = Enum.Font.GothamBold; ToggleButton.Text = "FARM SYSTEM: OFF"; ToggleButton.TextColor3 = OFF_RED; ToggleButton.TextSize = 9; ToggleButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 4)
 local DropdownButton = Instance.new("TextButton"); DropdownButton.Position = UDim2.new(0, 0, 0, 34); DropdownButton.Size = UDim2.new(1, 0, 0, 24); DropdownButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22); DropdownButton.Font = Enum.Font.GothamSemibold; DropdownButton.Text = "SELECT TARGETS ▼"; DropdownButton.TextColor3 = TEXT_LIGHT; DropdownButton.TextSize = 9; DropdownButton.Parent = SubFrames["AUTO FARM"]; Instance.new("UICorner", DropdownButton).CornerRadius = UDim.new(0, 4)
 local ListContainer = Instance.new("ScrollingFrame"); ListContainer.Position = UDim2.new(0, 0, 0, 62); ListContainer.Size = UDim2.new(1, 0, 1, -62); ListContainer.BackgroundColor3 = Color3.fromRGB(12, 12, 12); ListContainer.BorderSizePixel = 0; ListContainer.ScrollBarThickness = 2; ListContainer.Visible = false; ListContainer.Parent = SubFrames["AUTO FARM"]; Instance.new("UIListLayout", ListContainer).Padding = UDim.new(0, 2)
--- [[ ALIT HUB V3 FIXED - MUTLAK QUEUE[1] FIX - PART 6 ]]
+-- [[ ALIT HUB V3 FIXED - EXACT REPAIR EDITION - PART 6 ]]
 --==============================================================
 -- UI DROPDOWN & MULTI-RAK LIST LIST GENERATOR
 --==============================================================
@@ -347,7 +347,7 @@ local function BuildMultiRakUI()
     end
     MasterScroll.CanvasSize = UDim2.new(0, 0, 0, UIMasterLayout.AbsoluteContentSize.Y + 10)
 end
--- [[ ALIT HUB V3 FIXED - MUTLAK QUEUE[1] FIX - PART 7 ]]
+-- [[ ALIT HUB V3 FIXED - EXACT REPAIR EDITION - PART 7 ]]
 --==============================================================
 -- EVENT DRAGS, TOGGLES, AND CENTRAL FIFO QUEUE ENGINE CONTROLLER
 --==============================================================
@@ -393,39 +393,65 @@ local function buildRestockQueue()
     return queue
 end
 
+-- ====================================================================
+-- [[ IMPLEMENTASI REVISI TERTULIS KAKU SEPENUHNYA SESUAI DAFTAR USER ]]
+-- ====================================================================
 local restockBusy = false
+
 local function processRestock()
     if restockBusy or not _G.AlitHubRestockActive then return end
-    local queue = buildRestockQueue()
-    
-    -- ==============================================================
-    -- [[ PERBAIKAN MUTLAK SESUAI INSTRUKSI USER: DIKEMBALIKAN KE QUEUE[1] ]]
-    -- ==============================================================
-    local job = queue[1] 
-    -- ==============================================================
 
-    if job then
-        local part = getMainPart(job.slotObj)
-        if part then
-            restockBusy = true
-            local teleported = teleportToPart(part)
-            if teleported then
-                task.wait(RESTOCK_TELEPORT_DELAY)
-                if _G.AlitHubRestockActive and equipItemClean(job.itemName) then
-                    performRestock(job.slotObj, job.itemName)
+    local queue = buildRestockQueue()
+    local job = queue[1]
+
+    if not job then return end
+
+    local part = getMainPart(job.slotObj)
+    if not part then return end
+
+    restockBusy = true
+
+    local teleported = teleportToPart(part)
+
+    if teleported then
+        task.wait(RESTOCK_TELEPORT_DELAY)
+
+        if _G.AlitHubRestockActive then
+
+            local equipped = equipItemClean(job.itemName)
+
+            if equipped then
+
+                local restockSuccess = performRestock(job.slotObj, job.itemName)
+
+                if restockSuccess then
                     task.wait(RESTOCK_HOLD_DELAY)
-                    
+
                     local maxRetryTime = tick() + 4.0
-                    while IsTrayEmptyIndependent(job.slotObj) and tick() < maxRetryTime and _G.AlitHubRestockActive do
+
+                    while IsTrayEmptyIndependent(job.slotObj)
+                        and tick() < maxRetryTime
+                        and _G.AlitHubRestockActive do
+
                         task.wait(0.1)
                     end
+
                     task.wait(RESTOCK_COOLDOWN)
+                else
+                    -- Prompt gagal / tidak tersedia
+                    task.wait(0.5)
                 end
+
+            else
+                -- Item gagal di-equip
+                task.wait(0.5)
             end
-            restockBusy = false
         end
     end
+
+    restockBusy = false
 end
+-- ====================================================================
 
 local farmBusy = false
 local function processFarm()
@@ -455,7 +481,7 @@ local function processFarm()
 end
 
 --==============================================================
--- CENTRAL ENGINE CHANNELS 
+-- CENTRAL ENGINE CHANNELS (PRIORITAS SINKRON ESTAFET DUA ARAH)
 --==============================================================
 task.spawn(function()
     while ScreenGui.Parent do
@@ -464,12 +490,15 @@ task.spawn(function()
             local restockQueue = buildRestockQueue()
 
             if #restockQueue > 0 then
+                -- Ada slot kosong -> prioritaskan restock
                 processRestock()
             elseif _G.AlitHubFarmActive and not farmBusy then
+                -- Tidak ada slot kosong -> kembali farming secara estafet
                 processFarm()
             end
 
         elseif _G.AlitHubFarmActive and not farmBusy and not restockBusy then
+            -- Restock OFF -> farming normal keliling hutan
             processFarm()
         end
 
@@ -488,4 +517,4 @@ task.spawn(function()
 end)
 
 task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
-print("[ALIT HUB V3] queue[1] bug fixed perfectly. Engine 100% stable.")
+print("[ALIT HUB V3] Exact user checklist applied. All lines within copy zone.")
