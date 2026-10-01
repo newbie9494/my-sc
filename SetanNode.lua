@@ -46,7 +46,7 @@ local SelectedTargets, SelectedRestock, SelectedFeed = {}, {}, {}
 local GLOBAL_SAVED_POS = UDim2.new(0.5, -110, 0.3, -100)
 
 local TELEPORT_DELAY = 0.2      
-local MASA_TUNGGU = 2.0         
+local MASA_TUNGGU = 2.5         
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AlitHubUI"; ScreenGui.Parent = PlayerGui; ScreenGui.ResetOnSpawn = false
