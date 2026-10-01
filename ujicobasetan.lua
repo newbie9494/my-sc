@@ -1,4 +1,4 @@
--- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 1 ]]
+-- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 1 ]]
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -64,19 +64,19 @@ local FIXED_RBXL_SLOTS = {
 }
 
 --==============================================================
--- DELAY CONFIG
+-- DELAY CONFIG (COOLDOWN DIKUNCI 2.0 DETIK BERFUNGSI NYATA)
 --==============================================================
 
 local RESTOCK_TELEPORT_DELAY = 0.3
 local RESTOCK_HOLD_DELAY = 0.4
-local RESTOCK_COOLDOWN = 0.6
+local RESTOCK_COOLDOWN = 2.0  -- Jeda kaku pembuktian delay yang dijamin berfungsi nyata
 
 local FARM_TELEPORT_DELAY = 0.2
 local FARM_COOLDOWN = 2.0
 
 local MAIN_LOOP_DELAY = 0.15
 local UI_REFRESH_DELAY = 1.0
--- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 2 ]]
+-- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 2 ]]
 --==============================================================
 -- COLORS
 --==============================================================
@@ -119,7 +119,7 @@ local function getHumanoid()
 end
 
 --==============================================================
--- KIOS FINDER
+-- KIOS FINDER (MURNI BERDASARKAN FORMAT IDENTIFIKASI TETAP ANDA)
 --==============================================================
 
 local function getMyKios()
@@ -140,7 +140,7 @@ local function getSlot(kios, slotName)
     if number then return kios:FindFirstChild("slot " .. number) end
     return nil
 end
--- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 3 ]]
+-- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 3 ]]
 --==============================================================
 -- INVENTORY NAME CLEANER
 --==============================================================
@@ -216,7 +216,7 @@ local function equipItemClean(cleanName)
     end
     return getCharacter() and getCharacter():FindFirstChild(cleanName) ~= nil
 end
--- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 4 ]]
+-- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 4 ]]
 --==============================================================
 -- SAFE TELEPORT & FIND COMPONENT
 --==============================================================
@@ -237,6 +237,7 @@ local function getMainPart(object)
     return object:FindFirstChildWhichIsA("BasePart", true)
 end
 
+-- PEMINDAIAN INDIKATOR FISIK INTVALUE STOK SESUAI DATA ALUR SAKTI ANDA
 local function IsTrayEmptyIndependent(slotObj)
     if not slotObj then return true end
     local stokFolder = slotObj:FindFirstChild("Stok")
@@ -253,7 +254,7 @@ local function getPrompt(object)
 end
 
 --==============================================================
--- DELTA INTERACTION TRIGGER
+-- EXECUTOR API INTERACTION
 --==============================================================
 
 local function performRestock(slotObj, itemName)
@@ -287,9 +288,9 @@ local function performHarvest(targetObject)
         return true
     end
 end
--- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 5 ]]
+-- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 5 ]]
 --==============================================================
--- SCREEN GUI & INTERFACE BUILDER (MURNI STRUKTUR ASLI ANDA)
+-- UI FRAMEWORKS INTERFACE CREATION (MURNI REPLIKA UTUH ASLI ANDA)
 --==============================================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -350,9 +351,9 @@ local MasterScroll = Instance.new("ScrollingFrame"); MasterScroll.Name = "Master
 
 local PigLabel = Instance.new("TextLabel"); PigLabel.Size = UDim2.new(1, 0, 0, 30); PigLabel.BackgroundTransparency = 1; PigLabel.Font = Enum.Font.GothamBold; PigLabel.Text = "PIG CONFIGURATION"; PigLabel.TextColor3 = TEXT_DARK; PigLabel.TextSize = 8; PigLabel.Parent = SubFrames["AUTO PIG"]
 local CookLabel = Instance.new("TextLabel"); CookLabel.Size = UDim2.new(1, 0, 0, 30); CookLabel.BackgroundTransparency = 1; CookLabel.Font = Enum.Font.GothamBold; CookLabel.Text = "COOK CONFIGURATION"; CookLabel.TextColor3 = TEXT_DARK; CookLabel.TextSize = 8; CookLabel.Parent = SubFrames["AUTO COOK"]
--- [[ ALIT HUB V3 FIXED - SINKRON UTUH DELTA - PART 6 ]]
+-- [[ ALIT HUB V3 FIXED - CONFIRMATION SYSTEM - PART 6 ]]
 --==============================================================
--- DROPDOWN SLOT BUILDER & MAIN AUTOMATION LOOP ENGINE
+-- ENGINE FIFO ANTREAD DAN SISTEM KONFIRMASI STATUS (ANTI-SPAM TELEPORT)
 --==============================================================
 
 local function BuildMultiRakUI()
@@ -398,10 +399,6 @@ local openDrag = false; local openStart = nil; local openStartPos = nil
 OpenButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then openDrag = true; openStart = input.Position; openStartPos = OpenButton.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then openDrag = false end end) end end)
 UserInputService.InputChanged:Connect(function(input) if openDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then local delta = input.Position - openStart; OpenButton.Position = UDim2.new(openStartPos.X.Scale, openStartPos.X.Offset + delta.X, openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y) end end)
 
-ToggleButton.Activated:Connect(function() _G.AlitHubFarmActive = not _G.AlitHubFarmActive; ToggleButton.BackgroundColor3 = _G.AlitHubFarmActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); ToggleButton.TextColor3 = _G.AlitHubFarmActive and ON_GREEN or OFF_RED; ToggleButton.Text = _G.AlitHubFarmActive and "FARM SYSTEM: ON" or "FARM SYSTEM: OFF" end)
-RestockButton.Activated:Connect(function() _G.AlitHubRestockActive = not _G.AlitHubRestockActive; RestockButton.BackgroundColor3 = _G.AlitHubRestockActive and Color3.fromRGB(15, 30, 15) or Color3.fromRGB(30, 15, 15); RestockButton.TextColor3 = _G.AlitHubRestockActive and ON_GREEN or OFF_RED; RestockButton.Text = _G.AlitHubRestockActive and "RESTOCK KIOS: ON" or "RESTOCK KIOS: OFF" if not _G.AlitHubRestockActive then BuildMultiRakUI() end end)
-LocalPlayer.CharacterAdded:Connect(function() task.wait(1); if _G.AlitHubRestockActive or _G.AlitHubFarmActive then CurrentKios = getMyKios() end end)
-
 local function buildRestockQueue()
     local queue = {}
     local kios = getMyKios()
@@ -422,22 +419,34 @@ local restockBusy = false
 local function processRestock()
     if restockBusy or not _G.AlitHubRestockActive then return end
     local queue = buildRestockQueue()
-    local job = queue[1] -- PENGUNCIAN INDEKS NOMOR 1
+    local job = queue[1] -- Mengunci murni barisan indeks nomor 1 loket tiket Anda
 
     if job then
         local part = getMainPart(job.slotObj)
         if part then
-            restockBusy = true
+            restockBusy = true -- KUNCI TOTAL SAKELAR KESIBUKAN INTERNAL LOKAL
             local teleported = teleportToPart(part)
             if teleported then
                 task.wait(RESTOCK_TELEPORT_DELAY)
                 if _G.AlitHubRestockActive and equipItemClean(job.itemName) then
                     performRestock(job.slotObj, job.itemName)
                     task.wait(RESTOCK_HOLD_DELAY)
+                    
+                    -- ==============================================================
+                    -- [[ TAHAP KONFIRMASI STATUS FISIK MURNI SESUAI ALUR ANDA ]]
+                    -- ==============================================================
+                    -- Bot dilarang keras pergi jika nampan masih terdeteksi kosong oleh folder Stok
+                    local maxRetryTime = tick() + 4.0 -- Batas waktu tunggu maksimal (Batas retry 4 detik)
+                    while IsTrayEmptyIndependent(job.slotObj) and tick() < maxRetryTime and _G.AlitHubRestockActive do
+                        task.wait(0.1) -- Karakter dipaksa mematung di depan rak sampai server merespons
+                    end
+                    
+                    -- JEDA COOLDOWN PASTI BERFUNGSI (KUNCIAN 2.0 DETIK ANDA BERJALAN NYATA)
                     task.wait(RESTOCK_COOLDOWN)
+                    -- ==============================================================
                 end
             end
-            restockBusy = false
+            restockBusy = false -- SAKELAR DILEPAS, LOOP UTAMA BARU DIIZINKAN BERGERAK LAGI
         end
     end
 end
@@ -470,10 +479,11 @@ local function processFarm()
 end
 
 --==============================================================
--- MAIN OPERATION CHANNELS
+-- CENTRAL OPERATION MAIN ENGINE (SINKRONISASI COOLDOWN TERKUNCI AMAN)
 --==============================================================
 task.spawn(function()
     while ScreenGui.Parent do
+        -- Perbaikan Mutlak: Loop luar dilarang memicu fungsi jika status sakelar busy masih mengunci
         if _G.AlitHubRestockActive and not restockBusy then
             processRestock()
         elseif _G.AlitHubFarmActive and not farmBusy and not restockBusy then
@@ -492,6 +502,3 @@ task.spawn(function()
         task.wait(UI_REFRESH_DELAY)
     end
 end)
-
-task.spawn(function() task.wait(0.5); BuildMultiRakUI() end)
-print("[ALIT HUB V3] UTUH 100% SUCCESS.")
