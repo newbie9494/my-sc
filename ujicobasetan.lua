@@ -235,7 +235,7 @@ local function performRestock(slotObj, itemName)
     local prompt = getPrompt(slotObj)
     if not prompt or not prompt.Enabled then return false end
     if fireproximityprompt then fireproximityprompt(prompt) return true
-    else prompt:InputHoldBegin() task.wait(0.1) prompt:InputHoldEnd() return true end
+    else prompt:InputHoldBegin() task.wait(0.6) prompt:InputHoldEnd() return true end
 end
 
 local function performHarvest(targetObject)
