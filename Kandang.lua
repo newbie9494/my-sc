@@ -1,32 +1,16 @@
 -- [[ BABI MANAGER V8 - TARGET LOCK + CUSTOM MINIMUM AGE ]]
--- TEST HARNESS UNTUK GAME SENDIRI
-----------------------------------
+-- LocalScript
+-- Letakkan di StarterPlayer > StarterPlayerScripts
 
--- Minimum Age dapat diubah langsung melalui UI.
--- Nilai umur menggunakan MENIT.
---------------------------------
-
--- Contoh:
--- 30  = 30 menit
--- 60  = 1 jam
--- 90  = 1 jam 30 menit
--- 120 = 2 jam
---------------
-
--- Alur:
--- 1. Cari Babi Ngepet
--- 2. Validasi umur sesuai setting UI
--- 3. Lock INSTANCE target
--- 4. Teleport ke target
--- 5. Cari ProximityPrompt "Bawa" MILIK target
--- 6. Siapkan interaksi normal
-------------------------------
-
--- Script tidak menembakkan RemoteEvent arbitrer.
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
 
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ==============================================================
 -- CONFIG
@@ -35,11 +19,15 @@ local Workspace = game:GetService("Workspace")
 local DEFAULT_AGE_MINUTES = 60
 local TARGET_FOLDER_NAME = "kandang_babi"
 local TARGET_NAME = "Babi Ngepet"
+
 local SCAN_INTERVAL = 0.5
 local PROMPT_DISTANCE = 10
 local TELEPORT_DISTANCE = 5
 
--- Umur aktif. Default 60 menit.
+-- ==============================================================
+-- STATE
+-- ==============================================================
+
 local MinimumAgeMinutes = DEFAULT_AGE_MINUTES
 local MinimumAgeSeconds = DEFAULT_AGE_MINUTES * 60
 
@@ -50,21 +38,28 @@ local Busy = false
 local FolderKandang = Workspace:FindFirstChild(TARGET_FOLDER_NAME)
 
 -- ==============================================================
--- UI
+-- REMOVE OLD UI
 -- ==============================================================
 
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-
 local OldGui = PlayerGui:FindFirstChild("DeltaBabiManagerV8")
+
 if OldGui then
-OldGui:Destroy()
+	OldGui:Destroy()
 end
+
+-- ==============================================================
+-- SCREEN GUI
+-- ==============================================================
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "DeltaBabiManagerV8"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
+
+-- ==============================================================
+-- MAIN FRAME
+-- ==============================================================
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -85,10 +80,11 @@ Corner.Parent = MainFrame
 -- ==============================================================
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -40, 0, 35)
+TitleLabel.Name = "Title"
+TitleLabel.Size = UDim2.new(1, -45, 0, 35)
 TitleLabel.Position = UDim2.new(0, 0, 0, 0)
 TitleLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-TitleLabel.Text = "  BABI MANAGER V8"
+TitleLabel.Text = " BABI MANAGER V8"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.Font = Enum.Font.SourceSansBold
 TitleLabel.TextSize = 15
@@ -105,6 +101,7 @@ TitleCorner.Parent = TitleLabel
 -- ==============================================================
 
 local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
 CloseButton.Size = UDim2.new(0, 35, 0, 30)
 CloseButton.Position = UDim2.new(1, -38, 0, 3)
 CloseButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
@@ -124,6 +121,7 @@ CloseCorner.Parent = CloseButton
 -- ==============================================================
 
 local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name = "Status"
 StatusLabel.Size = UDim2.new(1, -30, 0, 25)
 StatusLabel.Position = UDim2.new(0, 15, 0, 40)
 StatusLabel.BackgroundTransparency = 1
@@ -139,6 +137,7 @@ StatusLabel.Parent = MainFrame
 -- ==============================================================
 
 local TargetLabel = Instance.new("TextLabel")
+TargetLabel.Name = "Target"
 TargetLabel.Size = UDim2.new(1, -30, 0, 25)
 TargetLabel.Position = UDim2.new(0, 15, 0, 62)
 TargetLabel.BackgroundTransparency = 1
@@ -151,10 +150,11 @@ TargetLabel.TextTruncate = Enum.TextTruncate.AtEnd
 TargetLabel.Parent = MainFrame
 
 -- ==============================================================
--- AGE SETTING
+-- AGE LABEL
 -- ==============================================================
 
 local AgeLabel = Instance.new("TextLabel")
+AgeLabel.Name = "AgeLabel"
 AgeLabel.Size = UDim2.new(0, 105, 0, 30)
 AgeLabel.Position = UDim2.new(0, 15, 0, 88)
 AgeLabel.BackgroundTransparency = 1
@@ -164,6 +164,10 @@ AgeLabel.Font = Enum.Font.SourceSansBold
 AgeLabel.TextSize = 12
 AgeLabel.TextXAlignment = Enum.TextXAlignment.Left
 AgeLabel.Parent = MainFrame
+
+-- ==============================================================
+-- AGE BOX
+-- ==============================================================
 
 local AgeBox = Instance.new("TextBox")
 AgeBox.Name = "AgeBox"
@@ -184,7 +188,12 @@ local AgeCorner = Instance.new("UICorner")
 AgeCorner.CornerRadius = UDim.new(0, 6)
 AgeCorner.Parent = AgeBox
 
+-- ==============================================================
+-- SET AGE
+-- ==============================================================
+
 local ApplyAgeButton = Instance.new("TextButton")
+ApplyAgeButton.Name = "ApplyAge"
 ApplyAgeButton.Size = UDim2.new(0, 70, 0, 30)
 ApplyAgeButton.Position = UDim2.new(0, 205, 0, 88)
 ApplyAgeButton.BackgroundColor3 = Color3.fromRGB(65, 110, 180)
@@ -204,6 +213,7 @@ ApplyCorner.Parent = ApplyAgeButton
 -- ==============================================================
 
 local AgeInfoLabel = Instance.new("TextLabel")
+AgeInfoLabel.Name = "AgeInfo"
 AgeInfoLabel.Size = UDim2.new(1, -30, 0, 20)
 AgeInfoLabel.Position = UDim2.new(0, 15, 0, 119)
 AgeInfoLabel.BackgroundTransparency = 1
@@ -219,6 +229,7 @@ AgeInfoLabel.Parent = MainFrame
 -- ==============================================================
 
 local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "Toggle"
 ToggleBtn.Size = UDim2.new(0, 260, 0, 45)
 ToggleBtn.Position = UDim2.new(0, 20, 0, 145)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
@@ -238,6 +249,7 @@ ToggleCorner.Parent = ToggleBtn
 -- ==============================================================
 
 local RestoreBtn = Instance.new("TextButton")
+RestoreBtn.Name = "RestoreButton"
 RestoreBtn.Size = UDim2.new(0, 50, 0, 50)
 RestoreBtn.Position = UDim2.new(0, 15, 0.5, -25)
 RestoreBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
@@ -252,20 +264,20 @@ RestoreCorner.CornerRadius = UDim.new(0, 25)
 RestoreCorner.Parent = RestoreBtn
 
 -- ==============================================================
--- STATUS FUNCTION
+-- STATUS FUNCTIONS
 -- ==============================================================
 
 local function SetStatus(text, color)
-StatusLabel.Text = "STATUS: " .. text
-StatusLabel.TextColor3 = color
+	StatusLabel.Text = "STATUS: " .. text
+	StatusLabel.TextColor3 = color
 end
 
 local function SetTarget(model)
-if model then
-TargetLabel.Text = "TARGET: " .. model:GetFullName()
-else
-TargetLabel.Text = "TARGET: NONE"
-end
+	if model then
+		TargetLabel.Text = "TARGET: " .. model:GetFullName()
+	else
+		TargetLabel.Text = "TARGET: NONE"
+	end
 end
 
 -- ==============================================================
@@ -273,59 +285,57 @@ end
 -- ==============================================================
 
 local function ApplyAgeSetting()
-local text = AgeBox.Text
-local number = tonumber(text)
+	local number = tonumber(AgeBox.Text)
 
-```
-if not number then
-    AgeBox.Text = tostring(MinimumAgeMinutes)
-    SetStatus(
-        "INVALID AGE",
-        Color3.fromRGB(255, 100, 100)
-    )
-    return
-end
+	if not number then
+		AgeBox.Text = tostring(MinimumAgeMinutes)
 
-number = math.floor(number)
+		SetStatus(
+			"INVALID AGE",
+			Color3.fromRGB(255, 100, 100)
+		)
 
-if number < 1 then
-    number = 1
-end
+		return
+	end
 
--- Batas aman input UI.
-if number > 100000 then
-    number = 100000
-end
+	number = math.floor(number)
 
-MinimumAgeMinutes = number
-MinimumAgeSeconds = number * 60
+	if number < 1 then
+		number = 1
+	end
 
-AgeBox.Text = tostring(MinimumAgeMinutes)
+	if number > 100000 then
+		number = 100000
+	end
 
-AgeInfoLabel.Text =
-    "Target minimum: "
-    .. tostring(MinimumAgeMinutes)
-    .. " menit"
+	MinimumAgeMinutes = number
+	MinimumAgeSeconds = number * 60
 
-SetStatus(
-    "AGE SET: " .. tostring(MinimumAgeMinutes) .. " MIN",
-    Color3.fromRGB(80, 220, 255)
-)
+	AgeBox.Text = tostring(MinimumAgeMinutes)
 
--- Target lama dibatalkan supaya scanner
--- melakukan validasi ulang menggunakan setting baru.
-CurrentTarget = nil
-SetTarget(nil)
-```
+	AgeInfoLabel.Text =
+		"Target minimum: "
+		.. tostring(MinimumAgeMinutes)
+		.. " menit"
 
+	SetStatus(
+		"AGE SET: " .. tostring(MinimumAgeMinutes) .. " MIN",
+		Color3.fromRGB(80, 220, 255)
+	)
+
+	-- Target lama dibatalkan.
+	-- Scanner akan melakukan validasi ulang
+	-- menggunakan umur baru.
+	CurrentTarget = nil
+	SetTarget(nil)
 end
 
 ApplyAgeButton.MouseButton1Click:Connect(ApplyAgeSetting)
 
 AgeBox.FocusLost:Connect(function(enterPressed)
-if enterPressed then
-ApplyAgeSetting()
-end
+	if enterPressed then
+		ApplyAgeSetting()
+	end
 end)
 
 -- ==============================================================
@@ -333,41 +343,53 @@ end)
 -- ==============================================================
 
 ToggleBtn.MouseButton1Click:Connect(function()
-AutoPickupActive = not AutoPickupActive
+	AutoPickupActive = not AutoPickupActive
 
-```
-if AutoPickupActive then
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
-    ToggleBtn.Text = "AUTO PICKUP: ON"
+	if AutoPickupActive then
 
-    SetStatus(
-        "SCANNING >= " .. tostring(MinimumAgeMinutes) .. " MIN",
-        Color3.fromRGB(80, 255, 100)
-    )
-else
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    ToggleBtn.Text = "AUTO PICKUP: OFF"
+		ToggleBtn.BackgroundColor3 =
+			Color3.fromRGB(50, 180, 50)
 
-    SetStatus(
-        "OFF",
-        Color3.fromRGB(255, 100, 100)
-    )
+		ToggleBtn.Text =
+			"AUTO PICKUP: ON"
 
-    CurrentTarget = nil
-    SetTarget(nil)
-end
-```
+		SetStatus(
+			"SCANNING >= "
+			.. tostring(MinimumAgeMinutes)
+			.. " MIN",
+			Color3.fromRGB(80, 255, 100)
+		)
 
+	else
+
+		ToggleBtn.BackgroundColor3 =
+			Color3.fromRGB(200, 50, 50)
+
+		ToggleBtn.Text =
+			"AUTO PICKUP: OFF"
+
+		SetStatus(
+			"OFF",
+			Color3.fromRGB(255, 100, 100)
+		)
+
+		CurrentTarget = nil
+		SetTarget(nil)
+	end
 end)
 
+-- ==============================================================
+-- CLOSE / RESTORE
+-- ==============================================================
+
 CloseButton.MouseButton1Click:Connect(function()
-MainFrame.Visible = false
-RestoreBtn.Visible = true
+	MainFrame.Visible = false
+	RestoreBtn.Visible = true
 end)
 
 RestoreBtn.MouseButton1Click:Connect(function()
-MainFrame.Visible = true
-RestoreBtn.Visible = false
+	MainFrame.Visible = true
+	RestoreBtn.Visible = false
 end)
 
 -- ==============================================================
@@ -375,20 +397,17 @@ end)
 -- ==============================================================
 
 local function GetCharacter()
-return LocalPlayer.Character
+	return LocalPlayer.Character
 end
 
 local function GetRoot()
-local Character = GetCharacter()
+	local Character = GetCharacter()
 
-```
-if not Character then
-    return nil
-end
+	if not Character then
+		return nil
+	end
 
-return Character:FindFirstChild("HumanoidRootPart")
-```
-
+	return Character:FindFirstChild("HumanoidRootPart")
 end
 
 -- ==============================================================
@@ -396,31 +415,38 @@ end
 -- ==============================================================
 
 local function IsTargetPig(model)
-if not model or not model:IsA("Model") then
-return false
-end
 
-```
-if model.Name == TARGET_NAME then
-    return true
-end
+	if not model then
+		return false
+	end
 
-for _, obj in ipairs(model:GetDescendants()) do
-    if obj:IsA("TextLabel") or obj:IsA("TextBox") then
-        if string.find(
-            obj.Text,
-            TARGET_NAME,
-            1,
-            true
-        ) then
-            return true
-        end
-    end
-end
+	if not model:IsA("Model") then
+		return false
+	end
 
-return false
-```
+	if model.Name == TARGET_NAME then
+		return true
+	end
 
+	for _, obj in ipairs(model:GetDescendants()) do
+
+		if obj:IsA("TextLabel")
+			or obj:IsA("TextBox")
+		then
+
+			if string.find(
+				obj.Text,
+				TARGET_NAME,
+				1,
+				true
+			) then
+
+				return true
+			end
+		end
+	end
+
+	return false
 end
 
 -- ==============================================================
@@ -428,18 +454,16 @@ end
 -- ==============================================================
 
 local function ReadNumber(value)
-if typeof(value) == "number" then
-return value
-end
 
-```
-if typeof(value) == "string" then
-    return tonumber(value)
-end
+	if typeof(value) == "number" then
+		return value
+	end
 
-return nil
-```
+	if typeof(value) == "string" then
+		return tonumber(value)
+	end
 
+	return nil
 end
 
 -- ==============================================================
@@ -448,67 +472,69 @@ end
 
 local function ReadAgeSeconds(pig)
 
-```
-local attributes = {
-    "AgeSeconds",
-    "Age",
-    "age",
-    "UmurSeconds",
-    "Umur",
-    "umur",
-    "TimeAlive",
-    "timeAlive",
-    "ElapsedTime",
-    "elapsedTime"
-}
+	local attributes = {
+		"AgeSeconds",
+		"Age",
+		"age",
+		"UmurSeconds",
+		"Umur",
+		"umur",
+		"TimeAlive",
+		"timeAlive",
+		"ElapsedTime",
+		"elapsedTime"
+	}
 
-for _, attributeName in ipairs(attributes) do
+	for _, attributeName in ipairs(attributes) do
 
-    local value = pig:GetAttribute(attributeName)
-    local number = ReadNumber(value)
+		local value =
+			pig:GetAttribute(attributeName)
 
-    if number then
-        return number
-    end
-end
+		local number =
+			ReadNumber(value)
 
-for _, obj in ipairs(pig:GetDescendants()) do
+		if number then
+			return number
+		end
+	end
 
-    if obj:IsA("NumberValue")
-        or obj:IsA("IntValue")
-    then
+	for _, obj in ipairs(
+		pig:GetDescendants()
+	) do
 
-        local lowerName =
-            string.lower(obj.Name)
+		if obj:IsA("NumberValue")
+			or obj:IsA("IntValue")
+		then
 
-        if string.find(
-            lowerName,
-            "age",
-            1,
-            true
-        )
-        or string.find(
-            lowerName,
-            "umur",
-            1,
-            true
-        )
-        or string.find(
-            lowerName,
-            "timealive",
-            1,
-            true
-        )
-        then
+			local lowerName =
+				string.lower(obj.Name)
 
-            return obj.Value
-        end
-    end
-end
+			if string.find(
+				lowerName,
+				"age",
+				1,
+				true
+			)
+			or string.find(
+				lowerName,
+				"umur",
+				1,
+				true
+			)
+			or string.find(
+				lowerName,
+				"timealive",
+				1,
+				true
+			)
+			then
 
-return nil
-```
+				return obj.Value
+			end
+		end
+	end
 
+	return nil
 end
 
 -- ==============================================================
@@ -517,55 +543,56 @@ end
 
 local function IsAdult(pig)
 
-```
-for _, gui in ipairs(
-    pig:GetDescendants()
-) do
+	for _, gui in ipairs(
+		pig:GetDescendants()
+	) do
 
-    if gui:IsA("BillboardGui") then
+		if gui:IsA("BillboardGui") then
 
-        for _, label in ipairs(
-            gui:GetDescendants()
-        ) do
+			for _, label in ipairs(
+				gui:GetDescendants()
+			) do
 
-            if label:IsA("TextLabel")
-                or label:IsA("TextBox")
-            then
+				if label:IsA("TextLabel")
+					or label:IsA("TextBox")
+				then
 
-                local text = label.Text
+					local text =
+						label.Text
 
-                if string.find(
-                    text,
-                    "Bayi",
-                    1,
-                    true
-                )
-                or string.find(
-                    text,
-                    "Muda",
-                    1,
-                    true
-                )
-                then
-                    return false
-                end
+					if string.find(
+						text,
+						"Bayi",
+						1,
+						true
+					)
+					or string.find(
+						text,
+						"Muda",
+						1,
+						true
+					)
+					then
 
-                if string.find(
-                    text,
-                    "Dewasa",
-                    1,
-                    true
-                ) then
-                    return true
-                end
-            end
-        end
-    end
-end
+						return false
+					end
 
-return false
-```
+					if string.find(
+						text,
+						"Dewasa",
+						1,
+						true
+					)
+					then
 
+						return true
+					end
+				end
+			end
+		end
+	end
+
+	return false
 end
 
 -- ==============================================================
@@ -574,17 +601,14 @@ end
 
 local function IsOldEnough(pig)
 
-```
-local ageSeconds =
-    ReadAgeSeconds(pig)
+	local ageSeconds =
+		ReadAgeSeconds(pig)
 
-if not ageSeconds then
-    return false
-end
+	if not ageSeconds then
+		return false
+	end
 
-return ageSeconds >= MinimumAgeSeconds
-```
-
+	return ageSeconds >= MinimumAgeSeconds
 end
 
 -- ==============================================================
@@ -593,26 +617,23 @@ end
 
 local function GetPigPosition(pig)
 
-```
-if pig.PrimaryPart then
-    return pig.PrimaryPart.Position
-end
+	if pig.PrimaryPart then
+		return pig.PrimaryPart.Position
+	end
 
-local root =
-    pig:FindFirstChild("HumanoidRootPart")
-    or pig:FindFirstChild("RootPart")
-    or pig:FindFirstChildWhichIsA(
-        "BasePart",
-        true
-    )
+	local root =
+		pig:FindFirstChild("HumanoidRootPart")
+		or pig:FindFirstChild("RootPart")
+		or pig:FindFirstChildWhichIsA(
+			"BasePart",
+			true
+		)
 
-if root then
-    return root.Position
-end
+	if root then
+		return root.Position
+	end
 
-return nil
-```
-
+	return nil
 end
 
 -- ==============================================================
@@ -621,58 +642,60 @@ end
 
 local function FindBestTarget()
 
-```
-if not FolderKandang then
-    FolderKandang =
-        Workspace:FindFirstChild(
-            TARGET_FOLDER_NAME
-        )
-end
+	if not FolderKandang
+		or not FolderKandang.Parent
+	then
 
-if not FolderKandang then
-    return nil
-end
+		FolderKandang =
+			Workspace:FindFirstChild(
+				TARGET_FOLDER_NAME
+			)
+	end
 
-local root = GetRoot()
+	if not FolderKandang then
+		return nil
+	end
 
-if not root then
-    return nil
-end
+	local root = GetRoot()
 
-local bestPig = nil
-local bestDistance = math.huge
+	if not root then
+		return nil
+	end
 
-for _, pig in ipairs(
-    FolderKandang:GetChildren()
-) do
+	local bestPig = nil
+	local bestDistance = math.huge
 
-    if pig:IsA("Model")
-        and IsTargetPig(pig)
-        and IsOldEnough(pig)
-        and IsAdult(pig)
-    then
+	for _, pig in ipairs(
+		FolderKandang:GetChildren()
+	) do
 
-        local position =
-            GetPigPosition(pig)
+		if pig:IsA("Model")
+			and IsTargetPig(pig)
+			and IsOldEnough(pig)
+			and IsAdult(pig)
+		then
 
-        if position then
+			local position =
+				GetPigPosition(pig)
 
-            local distance =
-                (root.Position - position).Magnitude
+			if position then
 
-            if distance < bestDistance then
+				local distance =
+					(
+						root.Position
+						- position
+					).Magnitude
 
-                bestDistance = distance
-                bestPig = pig
+				if distance < bestDistance then
 
-            end
-        end
-    end
-end
+					bestDistance = distance
+					bestPig = pig
+				end
+			end
+		end
+	end
 
-return bestPig
-```
-
+	return bestPig
 end
 
 -- ==============================================================
@@ -681,81 +704,75 @@ end
 
 local function IsTargetStillValid(target)
 
-```
-if not target then
-    return false
-end
+	if not target then
+		return false
+	end
 
-if not target.Parent then
-    return false
-end
+	if not target.Parent then
+		return false
+	end
 
-if not IsTargetPig(target) then
-    return false
-end
+	if not IsTargetPig(target) then
+		return false
+	end
 
-if not IsOldEnough(target) then
-    return false
-end
+	if not IsOldEnough(target) then
+		return false
+	end
 
-if not IsAdult(target) then
-    return false
-end
+	if not IsAdult(target) then
+		return false
+	end
 
-return true
-```
-
+	return true
 end
 
 -- ==============================================================
--- FIND BAwa PROMPT
+-- FIND BAWA PROMPT
 -- ==============================================================
 
 local function FindBawaPrompt(target)
 
-```
-if not target then
-    return nil
-end
+	if not target then
+		return nil
+	end
 
-for _, obj in ipairs(
-    target:GetDescendants()
-) do
+	for _, obj in ipairs(
+		target:GetDescendants()
+	) do
 
-    if obj:IsA("ProximityPrompt") then
+		if obj:IsA("ProximityPrompt") then
 
-        local actionText =
-            string.lower(
-                obj.ActionText or ""
-            )
+			local actionText =
+				string.lower(
+					obj.ActionText or ""
+				)
 
-        local objectText =
-            string.lower(
-                obj.ObjectText or ""
-            )
+			local objectText =
+				string.lower(
+					obj.ObjectText or ""
+				)
 
-        if string.find(
-            actionText,
-            "bawa",
-            1,
-            true
-        )
-        or string.find(
-            objectText,
-            "bawa",
-            1,
-            true
-        )
-        then
+			if string.find(
+				actionText,
+				"bawa",
+				1,
+				true
+			)
+			or string.find(
+				objectText,
+				"bawa",
+				1,
+				true
+			)
+			then
 
-            return obj
-        end
-    end
-end
+				return obj
+			end
+		end
+	end
 
-return nil
-```
-
+	return nil
 end
 
 -- ==============================================================
@@ -764,39 +781,37 @@ end
 
 local function TeleportNearTarget(target)
 
-```
-local root = GetRoot()
-local position =
-    GetPigPosition(target)
+	local root = GetRoot()
 
-if not root or not position then
-    return false
-end
+	local position =
+		GetPigPosition(target)
 
-root.CFrame =
-    CFrame.new(
-        position
-            + Vector3.new(
-                0,
-                0,
-                TELEPORT_DISTANCE
-            ),
-        position
-    )
+	if not root or not position then
+		return false
+	end
 
-task.wait(0.2)
+	root.CFrame =
+		CFrame.new(
+			position
+				+ Vector3.new(
+					0,
+					0,
+					TELEPORT_DISTANCE
+				),
+			position
+		)
 
-local newRoot = GetRoot()
+	task.wait(0.2)
 
-if not newRoot then
-    return false
-end
+	local newRoot = GetRoot()
 
-return (
-    newRoot.Position - position
-).Magnitude <= PROMPT_DISTANCE
-```
+	if not newRoot then
+		return false
+	end
 
+	return (
+		newRoot.Position - position
+	).Magnitude <= PROMPT_DISTANCE
 end
 
 -- ==============================================================
@@ -805,155 +820,139 @@ end
 
 local function ProcessTarget(target)
 
-```
-if Busy then
-    return
-end
+	if Busy then
+		return
+	end
 
-Busy = true
+	Busy = true
 
-CurrentTarget = target
-SetTarget(target)
+	CurrentTarget = target
+	SetTarget(target)
 
-if not IsTargetStillValid(target) then
+	if not IsTargetStillValid(target) then
 
-    SetStatus(
-        "TARGET INVALID",
-        Color3.fromRGB(255, 100, 100)
-    )
+		SetStatus(
+			"TARGET INVALID",
+			Color3.fromRGB(255, 100, 100)
+		)
 
-    CurrentTarget = nil
-    SetTarget(nil)
+		CurrentTarget = nil
+		SetTarget(nil)
 
-    Busy = false
-    return
-end
+		Busy = false
+		return
+	end
 
-SetStatus(
-    "TARGET LOCKED",
-    Color3.fromRGB(255, 220, 80)
-)
+	SetStatus(
+		"TARGET LOCKED",
+		Color3.fromRGB(255, 220, 80)
+	)
 
-if not TeleportNearTarget(target) then
+	if not TeleportNearTarget(target) then
 
-    SetStatus(
-        "TELEPORT FAILED",
-        Color3.fromRGB(255, 100, 100)
-    )
+		SetStatus(
+			"TELEPORT FAILED",
+			Color3.fromRGB(255, 100, 100)
+		)
 
-    CurrentTarget = nil
-    SetTarget(nil)
+		CurrentTarget = nil
+		SetTarget(nil)
 
-    Busy = false
-    return
-end
+		Busy = false
+		return
+	end
 
--- Jangan pernah menerima target lain
--- setelah target dikunci.
-if CurrentTarget ~= target then
-    Busy = false
-    return
-end
+	if CurrentTarget ~= target then
+		Busy = false
+		return
+	end
 
-if not IsTargetStillValid(target) then
+	if not IsTargetStillValid(target) then
 
-    SetStatus(
-        "TARGET CHANGED",
-        Color3.fromRGB(255, 100, 100)
-    )
+		SetStatus(
+			"TARGET CHANGED",
+			Color3.fromRGB(255, 100, 100)
+		)
 
-    CurrentTarget = nil
-    SetTarget(nil)
+		CurrentTarget = nil
+		SetTarget(nil)
 
-    Busy = false
-    return
-end
+		Busy = false
+		return
+	end
 
-local prompt =
-    FindBawaPrompt(target)
+	local prompt =
+		FindBawaPrompt(target)
 
-if not prompt then
+	if not prompt then
 
-    SetStatus(
-        "BAWA PROMPT NOT FOUND",
-        Color3.fromRGB(255, 170, 70)
-    )
+		SetStatus(
+			"BAWA PROMPT NOT FOUND",
+			Color3.fromRGB(255, 170, 70)
+		)
 
-    CurrentTarget = nil
-    SetTarget(nil)
+		CurrentTarget = nil
+		SetTarget(nil)
 
-    Busy = false
-    return
-end
+		Busy = false
+		return
+	end
 
--- Proteksi anti salah target.
-if not prompt:IsDescendantOf(target) then
+	if not prompt:IsDescendantOf(target) then
 
-    SetStatus(
-        "WRONG PROMPT BLOCKED",
-        Color3.fromRGB(255, 80, 80)
-    )
+		SetStatus(
+			"WRONG PROMPT BLOCKED",
+			Color3.fromRGB(255, 80, 80)
+		)
 
-    CurrentTarget = nil
-    SetTarget(nil)
+		CurrentTarget = nil
+		SetTarget(nil)
 
-    Busy = false
-    return
-end
+		Busy = false
+		return
+	end
 
-if not prompt.Enabled then
+	if not prompt.Enabled then
 
-    SetStatus(
-        "BAWA DISABLED",
-        Color3.fromRGB(255, 170, 70)
-    )
+		SetStatus(
+			"BAWA DISABLED",
+			Color3.fromRGB(255, 170, 70)
+		)
 
-    CurrentTarget = nil
-    SetTarget(nil)
+		CurrentTarget = nil
+		SetTarget(nil)
 
-    Busy = false
-    return
-end
+		Busy = false
+		return
+	end
 
-SetStatus(
-    "READY - HOLD E "
-    .. string.format(
-        "%.2f",
-        prompt.HoldDuration
-    )
-    .. "s",
-    Color3.fromRGB(80, 220, 255)
-)
+	SetStatus(
+		"BAWA PROMPT READY",
+		Color3.fromRGB(80, 255, 100)
+	)
 
-print(
-    "[Babi Manager V8] Target:",
-    target:GetFullName()
-)
+	print(
+		"[Babi Manager V8] Target:",
+		target:GetFullName()
+	)
 
-print(
-    "[Babi Manager V8] Minimum age:",
-    MinimumAgeMinutes,
-    "minutes"
-)
+	print(
+		"[Babi Manager V8] Minimum age:",
+		MinimumAgeMinutes,
+		"minutes"
+	)
 
-print(
-    "[Babi Manager V8] Prompt:",
-    prompt:GetFullName()
-)
+	print(
+		"[Babi Manager V8] Prompt:",
+		prompt:GetFullName()
+	)
 
-print(
-    "[Babi Manager V8] HoldDuration:",
-    prompt.HoldDuration
-)
+	print(
+		"[Babi Manager V8] HoldDuration:",
+		prompt.HoldDuration
+	)
 
-SetStatus(
-    "BAWA PROMPT READY",
-    Color3.fromRGB(80, 255, 100)
-)
-
-Busy = false
-```
-
+	Busy = false
 end
 
 -- ==============================================================
@@ -962,58 +961,56 @@ end
 
 task.spawn(function()
 
-```
-while ScreenGui.Parent do
+	while ScreenGui.Parent do
 
-    task.wait(SCAN_INTERVAL)
+		task.wait(SCAN_INTERVAL)
 
-    if not AutoPickupActive then
-        continue
-    end
+		if not AutoPickupActive then
+			continue
+		end
 
-    if Busy then
-        continue
-    end
+		if Busy then
+			continue
+		end
 
-    if CurrentTarget then
+		if CurrentTarget then
 
-        if IsTargetStillValid(
-            CurrentTarget
-        ) then
-            continue
-        end
+			if IsTargetStillValid(
+				CurrentTarget
+			) then
 
-        CurrentTarget = nil
-        SetTarget(nil)
-    end
+				continue
+			end
 
-    local target =
-        FindBestTarget()
+			CurrentTarget = nil
+			SetTarget(nil)
+		end
 
-    if target then
+		local target =
+			FindBestTarget()
 
-        task.spawn(function()
-            ProcessTarget(target)
-        end)
+		if target then
 
-    else
+			task.spawn(function()
+				ProcessTarget(target)
+			end)
 
-        SetStatus(
-            "NO BABI >= "
-            .. tostring(
-                MinimumAgeMinutes
-            )
-            .. " MIN",
-            Color3.fromRGB(
-                180,
-                180,
-                180
-            )
-        )
-    end
-end
-```
+		else
 
+			SetStatus(
+				"NO BABI >= "
+					.. tostring(
+						MinimumAgeMinutes
+					)
+					.. " MIN",
+				Color3.fromRGB(
+					180,
+					180,
+					180
+				)
+			)
+		end
+	end
 end)
 
 -- ==============================================================
@@ -1021,26 +1018,33 @@ end)
 -- ==============================================================
 
 AgeInfoLabel.Text =
-"Target minimum: "
-.. tostring(MinimumAgeMinutes)
-.. " menit"
+	"Target minimum: "
+	.. tostring(MinimumAgeMinutes)
+	.. " menit"
 
-print("[Babi Manager V8] Loaded.")
 print(
-"[Babi Manager V8] Minimum age:",
-MinimumAgeMinutes,
-"minutes"
+	"[Babi Manager V8] Loaded."
 )
+
 print(
-"[Babi Manager V8] Target:",
-TARGET_NAME
+	"[Babi Manager V8] Minimum age:",
+	MinimumAgeMinutes,
+	"minutes"
 )
+
 print(
-"[Babi Manager V8] Target lock: ENABLED"
+	"[Babi Manager V8] Target:",
+	TARGET_NAME
 )
+
 print(
-"[Babi Manager V8] Custom age setting: ENABLED"
+	"[Babi Manager V8] Target lock: ENABLED"
 )
+
 print(
-"[Babi Manager V8] Wrong-prompt protection: ENABLED"
+	"[Babi Manager V8] Custom age setting: ENABLED"
+)
+
+print(
+	"[Babi Manager V8] Wrong-prompt protection: ENABLED"
 )
