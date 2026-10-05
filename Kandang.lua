@@ -1,49 +1,38 @@
+```lua
 --==============================================================
 -- BABI MANAGER
--- FULL VERSION - SERVER DATA + DYNAMIC TARGET
---==============================================================
+-- FULL UPDATED VERSION
 --
--- STRUKTUR TARGET:
+-- PASANG SEBAGAI:
+-- StarterPlayer
+--   > StarterPlayerScripts
+--      > LocalScript
 --
--- Workspace
--- └── KandangBabi_<PlayerID>
---     ├── Babi_<ID>
---     │   └── modelinduk
---     │
---     ├── Babi_<ID>
---     │   └── modelbabi
---     │       ├── ProximityPrompt (Bawa)
---     │       └── ProximityPrompt (Gosok)
---     │
---     └── ...
---
--- DATA UMUR:
---
+-- SUMBER DATA:
 -- ReplicatedStorage
--- └── BabiBandar
---       :InvokeServer("info")
+--   > RemoteRegistry
+--      > Remotes
+--         > BabiBandar
 --
--- result.ternak
--- ├── id
--- ├── progres
--- ├── umur
--- ├── dewasa
--- └── ...
+-- TARGET:
+-- Workspace
+--   > KandangBabi_<PlayerID>
+--      > Babi_<ID>
+--         > modelbabi
+--            > ProximityPrompt
+--               ActionText = "Bawa"
 --
--- progres = hari
--- menit = progres * 1440
+-- UMUR:
+-- data.progres * 1440 = menit
 --
---==============================================================
-
-
---==============================================================
--- GAME LOADED
+-- BabiConfig:
+-- HariSampaiDewasa = 0.020833333333333336
+-- = 30 menit nyata
 --==============================================================
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
-
 
 --==============================================================
 -- SERVICES
@@ -53,56 +42,52 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-
---==============================================================
--- PLAYER
---==============================================================
-
 local LocalPlayer = Players.LocalPlayer
-
-if not LocalPlayer then
-    warn("[BABI MANAGER] LocalPlayer tidak ditemukan")
-    return
-end
-
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-
 
 --==============================================================
 -- CONFIG
 --==============================================================
 
 local DEFAULT_MIN_AGE = 60
+local MIN_ALLOWED_AGE = 1
+local MAX_ALLOWED_AGE = 100000
 
-local SCAN_INTERVAL = 1
+local REFRESH_INTERVAL = 2
+local TARGET_SCAN_INTERVAL = 0.5
+local PICKUP_INTERVAL = 0.35
+
+local PROMPT_ACTION = "Bawa"
+local MODEL_TARGET = "modelbabi"
 
 --==============================================================
 -- STATE
 --==============================================================
 
-local Running = false
+local MinAge = DEFAULT_MIN_AGE
 
-local MinimumAgeMinutes = DEFAULT_MIN_AGE
+local AutoPickup = false
+local TargetLock = true
 
 local CurrentTarget = nil
-
 local CurrentTargetData = nil
+local CurrentTargetAge = nil
 
-local BabiBandar = nil
+local ServerData = nil
+local LastRefresh = 0
+local LastTargetScan = 0
+local LastPickup = 0
 
 local Busy = false
 
-
 --==============================================================
--- HAPUS UI LAMA
+-- REMOVE OLD UI
 --==============================================================
 
-local OldUI = PlayerGui:FindFirstChild("BabiManagerUI")
-
-if OldUI then
-    OldUI:Destroy()
+local oldGui = PlayerGui:FindFirstChild("BabiManager")
+if oldGui then
+    oldGui:Destroy()
 end
-
 
 --==============================================================
 -- FIND BABIBANDAR
@@ -110,747 +95,398 @@ end
 
 local function FindBabiBandar()
 
-    local found = ReplicatedStorage:FindFirstChild(
-        "BabiBandar",
-        true
-    )
+    local remoteRegistry =
+        ReplicatedStorage:FindFirstChild("RemoteRegistry")
 
-    if found and found:IsA("RemoteFunction") then
-        return found
-    end
-
-    return nil
-end
-
-
-BabiBandar = FindBabiBandar()
-
-
---==============================================================
--- UI
---==============================================================
-
-local ScreenGui = Instance.new("ScreenGui")
-
-ScreenGui.Name = "BabiManagerUI"
-
-ScreenGui.ResetOnSpawn = false
-
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-ScreenGui.Parent = PlayerGui
-
-
---==============================================================
--- MAIN
---==============================================================
-
-local Main = Instance.new("Frame")
-
-Main.Name = "Main"
-
-Main.Size = UDim2.new(0, 340, 0, 360)
-
-Main.Position = UDim2.new(
-    0,
-    20,
-    0.5,
-    -180
-)
-
-Main.BackgroundColor3 = Color3.fromRGB(
-    24,
-    24,
-    24
-)
-
-Main.BorderSizePixel = 0
-
-Main.Parent = ScreenGui
-
-
-local MainCorner = Instance.new("UICorner")
-
-MainCorner.CornerRadius = UDim.new(
-    0,
-    10
-)
-
-MainCorner.Parent = Main
-
-
-local MainStroke = Instance.new("UIStroke")
-
-MainStroke.Thickness = 1
-
-MainStroke.Color = Color3.fromRGB(
-    80,
-    80,
-    80
-)
-
-MainStroke.Parent = Main
-
-
---==============================================================
--- TITLE
---==============================================================
-
-local Title = Instance.new("TextLabel")
-
-Title.Name = "Title"
-
-Title.Size = UDim2.new(
-    1,
-    -20,
-    0,
-    40
-)
-
-Title.Position = UDim2.new(
-    0,
-    10,
-    0,
-    5
-)
-
-Title.BackgroundTransparency = 1
-
-Title.Text = "BABI MANAGER"
-
-Title.TextColor3 = Color3.fromRGB(
-    255,
-    255,
-    255
-)
-
-Title.TextSize = 22
-
-Title.Font = Enum.Font.GothamBold
-
-Title.Parent = Main
-
-
---==============================================================
--- STATUS
---==============================================================
-
-local Status = Instance.new("TextLabel")
-
-Status.Name = "Status"
-
-Status.Size = UDim2.new(
-    1,
-    -20,
-    0,
-    38
-)
-
-Status.Position = UDim2.new(
-    0,
-    10,
-    0,
-    48
-)
-
-Status.BackgroundColor3 = Color3.fromRGB(
-    35,
-    35,
-    35
-)
-
-Status.BorderSizePixel = 0
-
-Status.Text = "STATUS: STARTING..."
-
-Status.TextColor3 = Color3.fromRGB(
-    255,
-    220,
-    80
-)
-
-Status.TextSize = 13
-
-Status.Font = Enum.Font.GothamBold
-
-Status.Parent = Main
-
-
-local StatusCorner = Instance.new("UICorner")
-
-StatusCorner.CornerRadius = UDim.new(
-    0,
-    6
-)
-
-StatusCorner.Parent = Status
-
-
---==============================================================
--- TARGET
---==============================================================
-
-local TargetLabel = Instance.new("TextLabel")
-
-TargetLabel.Name = "Target"
-
-TargetLabel.Size = UDim2.new(
-    1,
-    -20,
-    0,
-    58
-)
-
-TargetLabel.Position = UDim2.new(
-    0,
-    10,
-    0,
-    92
-)
-
-TargetLabel.BackgroundTransparency = 1
-
-TargetLabel.Text = "TARGET: NONE"
-
-TargetLabel.TextColor3 = Color3.fromRGB(
-    255,
-    255,
-    255
-)
-
-TargetLabel.TextSize = 13
-
-TargetLabel.Font = Enum.Font.Gotham
-
-TargetLabel.TextWrapped = true
-
-TargetLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-TargetLabel.Parent = Main
-
-
---==============================================================
--- AGE
---==============================================================
-
-local AgeLabel = Instance.new("TextLabel")
-
-AgeLabel.Name = "Age"
-
-AgeLabel.Size = UDim2.new(
-    1,
-    -20,
-    0,
-    30
-)
-
-AgeLabel.Position = UDim2.new(
-    0,
-    10,
-    0,
-    148
-)
-
-AgeLabel.BackgroundTransparency = 1
-
-AgeLabel.Text = "AGE: NONE"
-
-AgeLabel.TextColor3 = Color3.fromRGB(
-    190,
-    190,
-    190
-)
-
-AgeLabel.TextSize = 13
-
-AgeLabel.Font = Enum.Font.Gotham
-
-AgeLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-AgeLabel.Parent = Main
-
-
---==============================================================
--- SERVER DATA COUNT
---==============================================================
-
-local ServerCountLabel = Instance.new("TextLabel")
-
-ServerCountLabel.Name = "ServerCount"
-
-ServerCountLabel.Size = UDim2.new(
-    1,
-    -20,
-    0,
-    25
-)
-
-ServerCountLabel.Position = UDim2.new(
-    0,
-    10,
-    0,
-    178
-)
-
-ServerCountLabel.BackgroundTransparency = 1
-
-ServerCountLabel.Text = "SERVER TERNAK: 0"
-
-ServerCountLabel.TextColor3 = Color3.fromRGB(
-    150,
-    150,
-    150
-)
-
-ServerCountLabel.TextSize = 12
-
-ServerCountLabel.Font = Enum.Font.Gotham
-
-ServerCountLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-ServerCountLabel.Parent = Main
-
-
---==============================================================
--- WORKSPACE COUNT
---==============================================================
-
-local WorkspaceCountLabel = Instance.new("TextLabel")
-
-WorkspaceCountLabel.Name = "WorkspaceCount"
-
-WorkspaceCountLabel.Size = UDim2.new(
-    1,
-    -20,
-    0,
-    25
-)
-
-WorkspaceCountLabel.Position = UDim2.new(
-    0,
-    10,
-    0,
-    200
-)
-
-WorkspaceCountLabel.BackgroundTransparency = 1
-
-WorkspaceCountLabel.Text = "WORKSPACE BABI: 0"
-
-WorkspaceCountLabel.TextColor3 = Color3.fromRGB(
-    150,
-    150,
-    150
-)
-
-WorkspaceCountLabel.TextSize = 12
-
-WorkspaceCountLabel.Font = Enum.Font.Gotham
-
-WorkspaceCountLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-WorkspaceCountLabel.Parent = Main
-
-
---==============================================================
--- MIN AGE LABEL
---==============================================================
-
-local MinAgeLabel = Instance.new("TextLabel")
-
-MinAgeLabel.Name = "MinAgeLabel"
-
-MinAgeLabel.Size = UDim2.new(
-    0,
-    100,
-    0,
-    30
-)
-
-MinAgeLabel.Position = UDim2.new(
-    0,
-    10,
-    0,
-    225
-)
-
-MinAgeLabel.BackgroundTransparency = 1
-
-MinAgeLabel.Text = "MIN AGE:"
-
-MinAgeLabel.TextColor3 = Color3.fromRGB(
-    255,
-    255,
-    255
-)
-
-MinAgeLabel.TextSize = 14
-
-MinAgeLabel.Font = Enum.Font.GothamBold
-
-MinAgeLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-MinAgeLabel.Parent = Main
-
-
---==============================================================
--- AGE BOX
---==============================================================
-
-local AgeBox = Instance.new("TextBox")
-
-AgeBox.Name = "AgeBox"
-
-AgeBox.Size = UDim2.new(
-    0,
-    210,
-    0,
-    32
-)
-
-AgeBox.Position = UDim2.new(
-    0,
-    110,
-    0,
-    224
-)
-
-AgeBox.BackgroundColor3 = Color3.fromRGB(
-    42,
-    42,
-    42
-)
-
-AgeBox.BorderSizePixel = 0
-
-AgeBox.Text = tostring(DEFAULT_MIN_AGE)
-
-AgeBox.PlaceholderText = "Minutes"
-
-AgeBox.TextColor3 = Color3.fromRGB(
-    255,
-    255,
-    255
-)
-
-AgeBox.TextSize = 14
-
-AgeBox.Font = Enum.Font.Gotham
-
-AgeBox.ClearTextOnFocus = false
-
-AgeBox.Parent = Main
-
-
-local AgeBoxCorner = Instance.new("UICorner")
-
-AgeBoxCorner.CornerRadius = UDim.new(
-    0,
-    6
-)
-
-AgeBoxCorner.Parent = AgeBox
-
-
---==============================================================
--- APPLY BUTTON
---==============================================================
-
-local ApplyButton = Instance.new("TextButton")
-
-ApplyButton.Name = "Apply"
-
-ApplyButton.Size = UDim2.new(
-    0,
-    320,
-    0,
-    35
-)
-
-ApplyButton.Position = UDim2.new(
-    0,
-    10,
-    0,
-    265
-)
-
-ApplyButton.BackgroundColor3 = Color3.fromRGB(
-    55,
-    55,
-    55
-)
-
-ApplyButton.BorderSizePixel = 0
-
-ApplyButton.Text = "APPLY MIN AGE"
-
-ApplyButton.TextColor3 = Color3.fromRGB(
-    255,
-    255,
-    255
-)
-
-ApplyButton.TextSize = 13
-
-ApplyButton.Font = Enum.Font.GothamBold
-
-ApplyButton.Parent = Main
-
-
-local ApplyCorner = Instance.new("UICorner")
-
-ApplyCorner.CornerRadius = UDim.new(
-    0,
-    6
-)
-
-ApplyCorner.Parent = ApplyButton
-
-
---==============================================================
--- AUTO PICKUP BUTTON
---==============================================================
-
-local ToggleButton = Instance.new("TextButton")
-
-ToggleButton.Name = "Toggle"
-
-ToggleButton.Size = UDim2.new(
-    0,
-    320,
-    0,
-    35
-)
-
-ToggleButton.Position = UDim2.new(
-    0,
-    10,
-    0,
-    310
-)
-
-ToggleButton.BackgroundColor3 = Color3.fromRGB(
-    80,
-    50,
-    50
-)
-
-ToggleButton.BorderSizePixel = 0
-
-ToggleButton.Text = "AUTO PICKUP: OFF"
-
-ToggleButton.TextColor3 = Color3.fromRGB(
-    255,
-    255,
-    255
-)
-
-ToggleButton.TextSize = 13
-
-ToggleButton.Font = Enum.Font.GothamBold
-
-ToggleButton.Parent = Main
-
-
-local ToggleCorner = Instance.new("UICorner")
-
-ToggleCorner.CornerRadius = UDim.new(
-    0,
-    6
-)
-
-ToggleCorner.Parent = ToggleButton
-
-
---==============================================================
--- STATUS FUNCTION
---==============================================================
-
-local function SetStatus(text)
-
-    Status.Text = "STATUS: " .. tostring(text)
-
-end
-
-
---==============================================================
--- NORMALIZE ID
---==============================================================
-
-local function NormalizeID(value)
-
-    if value == nil then
+    if not remoteRegistry then
         return nil
     end
 
-    local result = tostring(value)
+    local remotesFolder = nil
 
-    result = result:gsub("^Babi_", "")
+    -- RemoteRegistry biasanya ModuleScript.
+    -- Kita coba gunakan API folder("Remotes").
+    if remoteRegistry:IsA("ModuleScript") then
 
-    result = string.lower(result)
+        local ok, registry = pcall(function()
+            return require(remoteRegistry)
+        end)
 
-    return result
+        if ok and type(registry) == "table" then
 
-end
+            if type(registry.folder) == "function" then
+                local okFolder, folder =
+                    pcall(function()
+                        return registry.folder("Remotes")
+                    end)
 
-
---==============================================================
--- PROGRESS -> MINUTES
---==============================================================
-
-local function ProgressToMinutes(progress)
-
-    progress = tonumber(progress)
-
-    if not progress then
-        return nil
-    end
-
-    return progress * 1440
-
-end
-
-
---==============================================================
--- GET BABI ID
---==============================================================
-
-local function GetBabiID(object)
-
-    if not object then
-        return nil
-    end
-
-    local id = string.match(
-        object.Name,
-        "^Babi_(.+)$"
-    )
-
-    if not id then
-        return nil
-    end
-
-    return NormalizeID(id)
-
-end
-
-
---==============================================================
--- GET ALL KANDANG
---==============================================================
-
-local function GetAllKandang()
-
-    local result = {}
-
-    for _, object in ipairs(
-        workspace:GetDescendants()
-    ) do
-
-        if object:IsA("Folder")
-            or object:IsA("Model") then
-
-            if string.match(
-                object.Name,
-                "^KandangBabi_"
-            ) then
-
-                table.insert(
-                    result,
-                    object
-                )
-
-            end
-        end
-    end
-
-    return result
-
-end
-
-
---==============================================================
--- GET ALL BABI
---==============================================================
-
-local function GetAllBabiModels()
-
-    local result = {}
-
-    local kandangList = GetAllKandang()
-
-    for _, kandang in ipairs(kandangList) do
-
-        for _, object in ipairs(
-            kandang:GetDescendants()
-        ) do
-
-            if object:IsA("Model")
-                or object:IsA("Folder") then
-
-                local id = GetBabiID(object)
-
-                if id then
-
-                    table.insert(
-                        result,
-                        {
-                            Object = object,
-                            ID = id
-                        }
-                    )
-
+                if okFolder and folder then
+                    remotesFolder = folder
                 end
             end
         end
     end
 
-    return result
+    -- Fallback jika Remotes terlihat sebagai child biasa.
+    if not remotesFolder then
+        remotesFolder =
+            remoteRegistry:FindFirstChild("Remotes")
+    end
 
-end
-
-
---==============================================================
--- FIND MODEL BABI
---==============================================================
-
-local function FindModelBabi(babi)
-
-    if not babi then
+    if not remotesFolder then
         return nil
     end
 
+    local BabiBandar =
+        remotesFolder:FindFirstChild("BabiBandar")
 
-    -- exact
-    local exact = babi:FindFirstChild(
-        "modelbabi",
-        true
+    if BabiBandar then
+        return BabiBandar
+    end
+
+    -- Fallback descendant search.
+    for _, obj in ipairs(remotesFolder:GetDescendants()) do
+        if obj.Name == "BabiBandar" then
+            return obj
+        end
+    end
+
+    return nil
+end
+
+local BabiBandar = FindBabiBandar()
+
+--==============================================================
+-- BABI CONFIG
+--==============================================================
+
+local BabiConfig = nil
+
+pcall(function()
+    BabiConfig =
+        require(
+            ReplicatedStorage:WaitForChild("BabiConfig")
+        )
+end)
+
+--==============================================================
+-- AGE FUNCTIONS
+--==============================================================
+
+local function GetAgeMinutes(data)
+
+    if type(data) ~= "table" then
+        return nil
+    end
+
+    local progres =
+        tonumber(data.progres)
+
+    if not progres then
+        return nil
+    end
+
+    -- progres = hari game
+    -- 1 hari = 1440 menit
+
+    return progres * 1440
+end
+
+local function IsAdult(data)
+
+    if type(data) ~= "table" then
+        return false
+    end
+
+    if data.dewasa == true then
+        return true
+    end
+
+    local age = GetAgeMinutes(data)
+
+    if not age then
+        return false
+    end
+
+    -- BabiConfig:
+    -- HariSampaiDewasa = 0.020833333333333336
+    -- = 30 menit
+
+    local adultMinutes = 30
+
+    if BabiConfig then
+
+        local threshold =
+            tonumber(BabiConfig.HariSampaiDewasa)
+
+        if threshold then
+            adultMinutes = threshold * 1440
+        end
+    end
+
+    return age >= adultMinutes
+end
+
+--==============================================================
+-- FORMAT AGE
+--==============================================================
+
+local function FormatAge(minutes)
+
+    if not minutes then
+        return "NONE"
+    end
+
+    minutes = math.max(0, minutes)
+
+    if minutes < 1 then
+        return string.format("%.1f menit", minutes)
+    end
+
+    if minutes < 60 then
+        return string.format(
+            "%d menit",
+            math.floor(minutes + 0.5)
+        )
+    end
+
+    local hours = math.floor(minutes / 60)
+    local mins = math.floor(minutes % 60)
+
+    if mins == 0 then
+        return string.format("%d jam", hours)
+    end
+
+    return string.format(
+        "%d jam %d menit",
+        hours,
+        mins
     )
+end
+
+--==============================================================
+-- GET SERVER INFO
+--==============================================================
+
+local function GetServerInfo()
+
+    if not BabiBandar then
+        BabiBandar = FindBabiBandar()
+    end
+
+    if not BabiBandar then
+        return nil, "BabiBandar tidak ditemukan"
+    end
+
+    if not BabiBandar:IsA("RemoteFunction") then
+        return nil,
+            "BabiBandar bukan RemoteFunction"
+    end
+
+    local success, result =
+        pcall(function()
+            return BabiBandar:InvokeServer("info")
+        end)
+
+    if not success then
+        return nil, tostring(result)
+    end
+
+    if type(result) ~= "table" then
+        return nil, "Result bukan table"
+    end
+
+    if result.ok ~= true then
+        return nil, "Result.ok = false"
+    end
+
+    return result, nil
+end
+
+--==============================================================
+-- REFRESH SERVER DATA
+--==============================================================
+
+local function RefreshServerData()
+
+    local result, errorMessage =
+        GetServerInfo()
+
+    if not result then
+        return false, errorMessage
+    end
+
+    ServerData = result
+    LastRefresh = os.clock()
+
+    return true, nil
+end
+
+--==============================================================
+-- FIND DATA BY ID
+--==============================================================
+
+local function FindTernakById(id)
+
+    if not ServerData then
+        return nil
+    end
+
+    local ternak = ServerData.ternak
+
+    if type(ternak) ~= "table" then
+        return nil
+    end
+
+    local wantedId =
+        string.lower(tostring(id))
+
+    --==========================================================
+    -- NORMAL ARRAY
+    --==========================================================
+
+    for _, data in ipairs(ternak) do
+
+        if type(data) == "table" then
+
+            local dataId = data.id
+
+            if dataId ~= nil then
+
+                if string.lower(tostring(dataId))
+                    == wantedId then
+
+                    return data
+                end
+            end
+        end
+    end
+
+    --==========================================================
+    -- DICTIONARY FALLBACK
+    --==========================================================
+
+    for key, data in pairs(ternak) do
+
+        if type(data) == "table" then
+
+            if string.lower(tostring(key))
+                == wantedId then
+
+                return data
+            end
+
+            if data.id ~= nil then
+
+                if string.lower(tostring(data.id))
+                    == wantedId then
+
+                    return data
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+--==============================================================
+-- GET PLAYER KANDANG
+--==============================================================
+
+local function FindPlayerKandang()
+
+    local wanted =
+        "kandangbabi_"
+        .. tostring(LocalPlayer.UserId)
+
+    -- First: exact expected name.
+    local exact =
+        workspace:FindFirstChild(wanted)
 
     if exact then
         return exact
     end
 
+    -- Fallback case-insensitive.
+    local wantedLower =
+        string.lower(wanted)
 
-    -- case insensitive
-    for _, object in ipairs(
-        babi:GetDescendants()
-    ) do
+    for _, obj in ipairs(workspace:GetChildren()) do
 
-        if string.lower(
-            object.Name
-        ) == "modelbabi" then
+        if string.lower(obj.Name)
+            == wantedLower then
 
-            return object
-
+            return obj
         end
     end
 
+    -- Last fallback: descendants.
+    for _, obj in ipairs(workspace:GetDescendants()) do
+
+        if string.lower(obj.Name)
+            == wantedLower then
+
+            return obj
+        end
+    end
 
     return nil
-
 end
 
+--==============================================================
+-- EXTRACT BABI ID
+--==============================================================
+
+local function GetBabiIdFromObject(obj)
+
+    if not obj then
+        return nil
+    end
+
+    local id =
+        string.match(
+            obj.Name,
+            "^Babi_(.+)$"
+        )
+
+    return id
+end
+
+--==============================================================
+-- FIND MODELBABI
+--==============================================================
+
+local function FindModelBabi(babiObject)
+
+    if not babiObject then
+        return nil
+    end
+
+    -- Exact expected child.
+    local exact =
+        babiObject:FindFirstChild(
+            MODEL_TARGET
+        )
+
+    if exact then
+        return exact
+    end
+
+    -- Case-insensitive fallback.
+    for _, child in ipairs(
+        babiObject:GetChildren()
+    ) do
+
+        if string.lower(child.Name)
+            == MODEL_TARGET then
+
+            return child
+        end
+    end
+
+    return nil
+end
 
 --==============================================================
 -- FIND BAWA PROMPT
@@ -862,1130 +498,1231 @@ local function FindBawaPrompt(modelBabi)
         return nil
     end
 
-    for _, object in ipairs(
+    for _, obj in ipairs(
         modelBabi:GetDescendants()
     ) do
 
-        if object:IsA(
-            "ProximityPrompt"
-        ) then
+        if obj:IsA("ProximityPrompt") then
 
             local action =
                 string.lower(
-                    tostring(
-                        object.ActionText
-                    )
+                    tostring(obj.ActionText or "")
                 )
 
-            if action == "bawa" then
-
-                return object
-
+            if action == string.lower(PROMPT_ACTION) then
+                return obj
             end
         end
     end
 
     return nil
-
 end
 
-
 --==============================================================
--- GET SERVER DATA
---==============================================================
-
-local function GetServerPigData()
-
-    if not BabiBandar then
-
-        BabiBandar =
-            FindBabiBandar()
-
-    end
-
-
-    if not BabiBandar then
-
-        return nil,
-            "BABIBANDAR TIDAK DITEMUKAN"
-
-    end
-
-
-    local success, result =
-        pcall(function()
-
-            return BabiBandar:
-                InvokeServer("info")
-
-        end)
-
-
-    if not success then
-
-        warn(
-            "[BABI MANAGER] INFO ERROR:",
-            result
-        )
-
-        return nil,
-            "INVOKE INFO ERROR"
-
-    end
-
-
-    if type(result) ~= "table" then
-
-        return nil,
-            "RESPONSE BUKAN TABLE"
-
-    end
-
-
-    if type(result.ternak) ~= "table" then
-
-        return nil,
-            "TERNak TIDAK DITEMUKAN"
-
-    end
-
-
-    return result.ternak, nil
-
-end
-
-
---==============================================================
--- COUNT SERVER DATA
+-- FIND ALL BABI IN PLAYER KANDANG
 --==============================================================
 
-local function CountTable(tableData)
+local function GetAllPlayerBabi()
 
-    local count = 0
+    local kandang =
+        FindPlayerKandang()
 
-    if type(tableData) ~= "table" then
-        return 0
+    if not kandang then
+        return {}
     end
 
-    for _, _ in pairs(tableData) do
-        count += 1
-    end
+    local result = {}
 
-    return count
+    for _, obj in ipairs(
+        kandang:GetDescendants()
+    ) do
 
-end
+        if obj:IsA("Model")
+            or obj:IsA("Folder") then
 
+            local id =
+                GetBabiIdFromObject(obj)
 
---==============================================================
--- FIND SERVER DATA BY ID
---==============================================================
+            if id then
 
-local function FindServerDataByID(
-    ternak,
-    workspaceID
-)
+                -- Must contain modelbabi.
+                local modelBabi =
+                    FindModelBabi(obj)
 
-    if type(ternak) ~= "table" then
-        return nil
-    end
+                if modelBabi then
 
+                    local prompt =
+                        FindBawaPrompt(modelBabi)
 
-    local wantedID =
-        NormalizeID(workspaceID)
+                    if prompt then
 
+                        table.insert(result, {
+                            object = obj,
+                            id = id,
+                            model = modelBabi,
+                            prompt = prompt
+                        })
 
-    if not wantedID then
-        return nil
-    end
-
-
-    for key, data in pairs(ternak) do
-
-        if type(data) == "table" then
-
-
-            --==================================================
-            -- DATA.ID
-            --==================================================
-
-            if data.id ~= nil then
-
-                local serverID =
-                    NormalizeID(data.id)
-
-                if serverID == wantedID then
-
-                    return data
-
+                    end
                 end
             end
-
-
-            --==================================================
-            -- KEY TABLE
-            --==================================================
-
-            if key ~= nil then
-
-                local keyID =
-                    NormalizeID(key)
-
-                if keyID == wantedID then
-
-                    return data
-
-                end
-            end
-
         end
     end
 
-
-    return nil
-
+    return result
 end
 
-
 --==============================================================
--- CLEAR TARGET
---==============================================================
-
-local function ClearTarget(reason)
-
-    CurrentTarget = nil
-
-    CurrentTargetData = nil
-
-    TargetLabel.Text =
-        "TARGET: NONE"
-
-    AgeLabel.Text =
-        "AGE: NONE"
-
-    if reason then
-        SetStatus(reason)
-    end
-
-end
-
-
---==============================================================
--- DISPLAY TARGET
+-- TARGET VALIDATION
 --==============================================================
 
-local function DisplayTarget(target)
-
-    if not target then
-
-        TargetLabel.Text =
-            "TARGET: NONE"
-
-        AgeLabel.Text =
-            "AGE: NONE"
-
-        return
-
-    end
-
-
-    TargetLabel.Text =
-        "TARGET: " ..
-        tostring(
-            target.Babi.Name
-        ) ..
-        "\nID: " ..
-        tostring(
-            target.PigId
-        )
-
-
-    local age =
-        tonumber(
-            target.AgeMinutes
-        ) or 0
-
-
-    local data =
-        target.Data
-
-
-    local umur = "UNKNOWN"
-
-
-    if data then
-
-        if data.umur ~= nil then
-
-            umur =
-                tostring(
-                    data.umur
-                )
-
-        elseif data.dewasa == true then
-
-            umur = "Dewasa"
-
-        end
-    end
-
-
-    AgeLabel.Text =
-        string.format(
-            "AGE: %.2f MIN | %s",
-            age,
-            umur
-        )
-
-end
-
-
---==============================================================
--- FIND TARGET
---==============================================================
-
-local function FindTarget()
-
-    local ternak, errorMessage =
-        GetServerPigData()
-
-
-    if not ternak then
-
-        return nil,
-            errorMessage
-
-    end
-
-
-    local serverCount =
-        CountTable(ternak)
-
-
-    ServerCountLabel.Text =
-        "SERVER TERNAK: " ..
-        tostring(serverCount)
-
-
-    local babiList =
-        GetAllBabiModels()
-
-
-    WorkspaceCountLabel.Text =
-        "WORKSPACE BABI: " ..
-        tostring(#babiList)
-
-
-    print(
-        "========================================"
-    )
-
-    print(
-        "[BABI MANAGER] SERVER TERNAK:",
-        serverCount
-    )
-
-    print(
-        "[BABI MANAGER] WORKSPACE BABI:",
-        #babiList
-    )
-
-    print(
-        "========================================"
-    )
-
-
-    --==========================================================
-    -- LOOP SEMUA BABI
-    --==========================================================
-
-    for _, info in ipairs(babiList) do
-
-        local babi =
-            info.Object
-
-        local workspaceID =
-            info.ID
-
-
-        print(
-            "[BABI MANAGER] CHECK:",
-            babi:GetFullName(),
-            "ID:",
-            workspaceID
-        )
-
-
-        --======================================================
-        -- CARI DATA SERVER
-        --======================================================
-
-        local data =
-            FindServerDataByID(
-                ternak,
-                workspaceID
-            )
-
-
-        if not data then
-
-            print(
-                "[BABI MANAGER] DATA SERVER TIDAK COCOK:",
-                workspaceID
-            )
-
-            continue
-
-        end
-
-
-        --======================================================
-        -- PROGRES
-        --======================================================
-
-        local progress =
-            tonumber(
-                data.progres
-            )
-
-
-        if not progress then
-
-            print(
-                "[BABI MANAGER] PROGRES INVALID:",
-                workspaceID,
-                data.progres
-            )
-
-            continue
-
-        end
-
-
-        --======================================================
-        -- UMUR
-        --======================================================
-
-        local ageMinutes =
-            ProgressToMinutes(
-                progress
-            )
-
-
-        if not ageMinutes then
-
-            continue
-
-        end
-
-
-        print(
-            "[BABI MANAGER] AGE:",
-            workspaceID,
-            ageMinutes,
-            "MIN"
-        )
-
-
-        --======================================================
-        -- CEK MIN AGE
-        --======================================================
-
-        if ageMinutes <
-            MinimumAgeMinutes then
-
-            print(
-                "[BABI MANAGER] TERLALU MUDA:",
-                workspaceID,
-                ageMinutes,
-                "<",
-                MinimumAgeMinutes
-            )
-
-            continue
-
-        end
-
-
-        --======================================================
-        -- MODEL BABI
-        --======================================================
-
-        local modelBabi =
-            FindModelBabi(
-                babi
-            )
-
-
-        if not modelBabi then
-
-            print(
-                "[BABI MANAGER] MODEL BABI TIDAK ADA:",
-                babi:GetFullName()
-            )
-
-            continue
-
-        end
-
-
-        --======================================================
-        -- PROMPT BAWA
-        --======================================================
-
-        local prompt =
-            FindBawaPrompt(
-                modelBabi
-            )
-
-
-        if not prompt then
-
-            print(
-                "[BABI MANAGER] PROMPT BAWA TIDAK ADA:",
-                modelBabi:GetFullName()
-            )
-
-            continue
-
-        end
-
-
-        --======================================================
-        -- TARGET VALID
-        --======================================================
-
-        print(
-            "========================================"
-        )
-
-        print(
-            "[BABI MANAGER] TARGET DITEMUKAN!"
-        )
-
-        print(
-            "BABI:",
-            babi:GetFullName()
-        )
-
-        print(
-            "ID:",
-            workspaceID
-        )
-
-        print(
-            "AGE:",
-            ageMinutes
-        )
-
-        print(
-            "MODEL:",
-            modelBabi:GetFullName()
-        )
-
-        print(
-            "PROMPT:",
-            prompt:GetFullName()
-        )
-
-        print(
-            "========================================"
-        )
-
-
-        return {
-
-            Babi = babi,
-
-            ModelBabi = modelBabi,
-
-            Prompt = prompt,
-
-            Data = data,
-
-            AgeMinutes = ageMinutes,
-
-            PigId = workspaceID
-
-        }
-
-    end
-
-
-    return nil,
-        "TIDAK ADA TARGET MEMENUHI SYARAT"
-
-end
-
-
---==============================================================
--- VALIDATE CURRENT TARGET
---==============================================================
-
-local function ValidateTarget(target)
-
-    if not target then
-        return false
-    end
-
-
-    if not target.Babi then
-        return false
-    end
-
-
-    if not target.Babi.Parent then
-        return false
-    end
-
-
-    if not target.ModelBabi then
-        return false
-    end
-
-
-    if not target.ModelBabi.Parent then
-        return false
-    end
-
-
-    if not target.Prompt then
-        return false
-    end
-
-
-    if not target.Prompt.Parent then
-        return false
-    end
-
-
-    return true
-
-end
-
-
---==============================================================
--- REFRESH CURRENT TARGET
---==============================================================
-
-local function RefreshCurrentTarget()
+local function IsTargetStillValid()
 
     if not CurrentTarget then
         return false
     end
 
-
-    if not ValidateTarget(
-        CurrentTarget
-    ) then
-
+    if not CurrentTarget.Parent then
         return false
-
     end
 
+    local id =
+        GetBabiIdFromObject(CurrentTarget)
 
-    local ternak, errorMessage =
-        GetServerPigData()
-
-
-    if not ternak then
-
-        SetStatus(
-            errorMessage or
-            "DATA ERROR"
-        )
-
-        return true
-
-    end
-
-
-    local targetID =
-        NormalizeID(
-            CurrentTarget.PigId
-        )
-
-
-    local data =
-        FindServerDataByID(
-            ternak,
-            targetID
-        )
-
-
-    if not data then
-
+    if not id then
         return false
-
     end
 
+    local model =
+        FindModelBabi(CurrentTarget)
 
-    local progress =
-        tonumber(
-            data.progres
-        )
-
-
-    if not progress then
-
+    if not model then
         return false
-
     end
 
+    local prompt =
+        FindBawaPrompt(model)
 
-    local ageMinutes =
-        ProgressToMinutes(
-            progress
-        )
-
-
-    if not ageMinutes then
-
+    if not prompt then
         return false
-
     end
 
-
-    CurrentTarget.Data =
-        data
-
-    CurrentTarget.AgeMinutes =
-        ageMinutes
-
-    CurrentTargetData =
-        data
-
-
-    DisplayTarget(
-        CurrentTarget
-    )
-
-
-    if ageMinutes >=
-        MinimumAgeMinutes then
-
-        SetStatus(
-            "TARGET LOCKED"
-        )
-
-        return true
-
-    end
-
-
-    return false
-
+    return true
 end
 
+--==============================================================
+-- FIND BEST TARGET
+--==============================================================
+
+local function FindBestTarget()
+
+    local candidates =
+        GetAllPlayerBabi()
+
+    local bestObject = nil
+    local bestData = nil
+    local bestAge = nil
+
+    for _, candidate in ipairs(candidates) do
+
+        local data =
+            FindTernakById(candidate.id)
+
+        if data then
+
+            local age =
+                GetAgeMinutes(data)
+
+            if age then
+
+                --==================================================
+                -- AGE FILTER
+                --==================================================
+
+                if age >= MinAge then
+
+                    -- Jangan pilih babi terkunci.
+                    if data.kunci ~= true then
+
+                        -- Jangan pilih babi bunting.
+                        if data.bunting ~= true then
+
+                            -- Hanya jenis ternak.
+                            if data.jenis == "ternak"
+                                or data.jenis == nil then
+
+                                if not bestAge
+                                    or age > bestAge then
+
+                                    bestObject =
+                                        candidate.object
+
+                                    bestData = data
+                                    bestAge = age
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return bestObject, bestData, bestAge
+end
 
 --==============================================================
--- ACQUIRE TARGET
+-- PICK TARGET
 --==============================================================
 
-local function AcquireTarget()
+local function UpdateTarget()
+
+    --==========================================================
+    -- TARGET LOCK
+    --==========================================================
+
+    if TargetLock
+        and CurrentTarget
+        and IsTargetStillValid() then
+
+        local id =
+            GetBabiIdFromObject(CurrentTarget)
+
+        local data =
+            FindTernakById(id)
+
+        if data then
+
+            local age =
+                GetAgeMinutes(data)
+
+            if age
+                and age >= MinAge
+                and data.kunci ~= true
+                and data.bunting ~= true then
+
+                CurrentTargetData = data
+                CurrentTargetAge = age
+
+                return
+            end
+        end
+    end
+
+    --==========================================================
+    -- FIND NEW TARGET
+    --==========================================================
+
+    local object, data, age =
+        FindBestTarget()
+
+    CurrentTarget = object
+    CurrentTargetData = data
+    CurrentTargetAge = age
+end
+
+--==============================================================
+-- GET TARGET PROMPT
+--==============================================================
+
+local function GetCurrentPrompt()
+
+    if not CurrentTarget then
+        return nil
+    end
+
+    local model =
+        FindModelBabi(CurrentTarget)
+
+    if not model then
+        return nil
+    end
+
+    return FindBawaPrompt(model)
+end
+
+--==============================================================
+-- AUTO PICKUP
+--==============================================================
+
+local function TryAutoPickup()
+
+    if not AutoPickup then
+        return
+    end
 
     if Busy then
         return
     end
 
+    if not CurrentTarget then
+        return
+    end
+
+    if os.clock() - LastPickup
+        < PICKUP_INTERVAL then
+
+        return
+    end
+
+    local prompt =
+        GetCurrentPrompt()
+
+    if not prompt then
+        return
+    end
+
+    --==========================================================
+    -- CHECK PROMPT
+    --==========================================================
+
+    if not prompt.Enabled then
+        return
+    end
+
+    local character =
+        LocalPlayer.Character
+
+    if not character then
+        return
+    end
+
+    local root =
+        character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+
+    if not root then
+        return
+    end
+
+    local promptParent =
+        prompt.Parent
+
+    if not promptParent then
+        return
+    end
+
+    local targetPart = nil
+
+    if promptParent:IsA("BasePart") then
+        targetPart = promptParent
+    else
+        targetPart =
+            promptParent:FindFirstChildWhichIsA(
+                "BasePart",
+                true
+            )
+    end
+
+    if not targetPart then
+        return
+    end
+
+    local distance =
+        (root.Position - targetPart.Position).Magnitude
+
+    --==========================================================
+    -- JANGAN MEMAKSA INTERAKSI DARI JARAK JAUH
+    --==========================================================
+
+    local maxDistance =
+        tonumber(prompt.MaxActivationDistance)
+        or 10
+
+    if distance > maxDistance + 1 then
+        return
+    end
+
+    LastPickup = os.clock()
 
     Busy = true
 
+    --==========================================================
+    -- TRIGGER PROXIMITY PROMPT
+    --
+    -- Server tetap memvalidasi interaksi.
+    -- Jika game menggunakan HoldDuration,
+    -- InputHoldBegin/End akan mengikuti mekanisme prompt.
+    --==========================================================
 
-    local target, errorMessage =
-        FindTarget()
+    pcall(function()
 
+        if prompt.HoldDuration
+            and prompt.HoldDuration > 0 then
 
-    if target then
+            prompt:InputHoldBegin()
 
-        CurrentTarget =
-            target
+            task.wait(
+                prompt.HoldDuration + 0.08
+            )
 
-        CurrentTargetData =
-            target.Data
+            prompt:InputHoldEnd()
 
+        else
 
-        DisplayTarget(
-            target
-        )
+            prompt:InputHoldBegin()
+            task.wait(0.08)
+            prompt:InputHoldEnd()
 
+        end
 
-        SetStatus(
-            "TARGET LOCKED"
-        )
+    end)
 
-
-    else
-
-        ClearTarget(
-            errorMessage or
-            "NO TARGET"
-        )
-
-    end
-
-
-    Busy = false
-
+    task.delay(0.2, function()
+        Busy = false
+    end)
 end
 
+--==============================================================
+-- UI
+--==============================================================
+
+local Gui =
+    Instance.new("ScreenGui")
+
+Gui.Name = "BabiManager"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = false
+Gui.ZIndexBehavior =
+    Enum.ZIndexBehavior.Sibling
+
+Gui.Parent = PlayerGui
 
 --==============================================================
--- APPLY MIN AGE
+-- MAIN FRAME
 --==============================================================
 
-local function ApplyMinAge()
+local Main =
+    Instance.new("Frame")
+
+Main.Name = "Main"
+Main.Size =
+    UDim2.new(0, 360, 0, 300)
+
+Main.Position =
+    UDim2.new(
+        0,
+        20,
+        0.5,
+        -150
+    )
+
+Main.BackgroundColor3 =
+    Color3.fromRGB(
+        25,
+        25,
+        25
+    )
+
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+
+local MainCorner =
+    Instance.new("UICorner")
+
+MainCorner.CornerRadius =
+    UDim.new(0, 10)
+
+MainCorner.Parent = Main
+
+--==============================================================
+-- TITLE
+--==============================================================
+
+local Title =
+    Instance.new("TextLabel")
+
+Title.Size =
+    UDim2.new(1, -20, 0, 40)
+
+Title.Position =
+    UDim2.new(0, 10, 0, 5)
+
+Title.BackgroundTransparency = 1
+
+Title.Text =
+    "BABI MANAGER"
+
+Title.TextColor3 =
+    Color3.fromRGB(
+        255,
+        255,
+        255
+    )
+
+Title.TextSize = 20
+Title.Font =
+    Enum.Font.GothamBold
+
+Title.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+Title.Parent = Main
+
+--==============================================================
+-- MIN AGE LABEL
+--==============================================================
+
+local AgeLabel =
+    Instance.new("TextLabel")
+
+AgeLabel.Size =
+    UDim2.new(0, 120, 0, 30)
+
+AgeLabel.Position =
+    UDim2.new(0, 15, 0, 52)
+
+AgeLabel.BackgroundTransparency = 1
+
+AgeLabel.Text =
+    "MIN AGE"
+
+AgeLabel.TextColor3 =
+    Color3.fromRGB(
+        220,
+        220,
+        220
+    )
+
+AgeLabel.TextSize = 14
+AgeLabel.Font =
+    Enum.Font.GothamBold
+
+AgeLabel.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+AgeLabel.Parent = Main
+
+--==============================================================
+-- AGE BOX
+--==============================================================
+
+local AgeBox =
+    Instance.new("TextBox")
+
+AgeBox.Size =
+    UDim2.new(0, 100, 0, 32)
+
+AgeBox.Position =
+    UDim2.new(0, 125, 0, 50)
+
+AgeBox.BackgroundColor3 =
+    Color3.fromRGB(
+        45,
+        45,
+        45
+    )
+
+AgeBox.BorderSizePixel = 0
+
+AgeBox.Text =
+    tostring(DEFAULT_MIN_AGE)
+
+AgeBox.TextColor3 =
+    Color3.fromRGB(
+        255,
+        255,
+        255
+    )
+
+AgeBox.TextSize = 15
+AgeBox.Font =
+    Enum.Font.Gotham
+
+AgeBox.ClearTextOnFocus = false
+
+AgeBox.Parent = Main
+
+local AgeCorner =
+    Instance.new("UICorner")
+
+AgeCorner.CornerRadius =
+    UDim.new(0, 6)
+
+AgeCorner.Parent = AgeBox
+
+--==============================================================
+-- MINUTES LABEL
+--==============================================================
+
+local MinuteLabel =
+    Instance.new("TextLabel")
+
+MinuteLabel.Size =
+    UDim2.new(0, 80, 0, 30)
+
+MinuteLabel.Position =
+    UDim2.new(0, 235, 0, 52)
+
+MinuteLabel.BackgroundTransparency = 1
+
+MinuteLabel.Text =
+    "menit"
+
+MinuteLabel.TextColor3 =
+    Color3.fromRGB(
+        180,
+        180,
+        180
+    )
+
+MinuteLabel.TextSize = 13
+MinuteLabel.Font =
+    Enum.Font.Gotham
+
+MinuteLabel.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+MinuteLabel.Parent = Main
+
+--==============================================================
+-- AGE BOX COMMIT
+--==============================================================
+
+local function ApplyAge()
 
     local value =
         tonumber(
             AgeBox.Text
         )
 
-
     if not value then
 
         AgeBox.Text =
-            tostring(
-                MinimumAgeMinutes
-            )
-
-        SetStatus(
-            "MIN AGE INVALID"
-        )
+            tostring(MinAge)
 
         return
-
     end
-
 
     value =
-        math.floor(
-            value
+        math.floor(value)
+
+    value =
+        math.clamp(
+            value,
+            MIN_ALLOWED_AGE,
+            MAX_ALLOWED_AGE
         )
 
-
-    if value < 1 then
-        value = 1
-    end
-
-
-    if value > 100000 then
-        value = 100000
-    end
-
-
-    MinimumAgeMinutes =
-        value
-
+    MinAge = value
 
     AgeBox.Text =
-        tostring(
-            value
-        )
+        tostring(MinAge)
 
+    -- Kalau setting umur berubah,
+    -- target lama harus dievaluasi lagi.
 
-    ClearTarget(
-        "MIN AGE: " ..
-        tostring(value) ..
-        " MIN"
-    )
+    CurrentTarget = nil
+    CurrentTargetData = nil
+    CurrentTargetAge = nil
 
+    UpdateTarget()
 end
 
-
---==============================================================
--- APPLY BUTTON
---==============================================================
-
-ApplyButton.MouseButton1Click:Connect(
+AgeBox.FocusLost:Connect(
     function()
-
-        ApplyMinAge()
-
+        ApplyAge()
     end
 )
 
+AgeBox:GetPropertyChangedSignal(
+    "Text"
+):Connect(function()
+
+    -- Jangan langsung mengubah MinAge
+    -- saat user masih mengetik.
+
+end)
 
 --==============================================================
--- ENTER AGE
+-- STATUS LABEL
 --==============================================================
 
-AgeBox.FocusLost:Connect(
-    function(enterPressed)
+local Status =
+    Instance.new("TextLabel")
 
-        if enterPressed then
+Status.Size =
+    UDim2.new(1, -30, 0, 28)
 
-            ApplyMinAge()
+Status.Position =
+    UDim2.new(0, 15, 0, 95)
+
+Status.BackgroundTransparency = 1
+
+Status.Text =
+    "STATUS: MEMUAT..."
+
+Status.TextColor3 =
+    Color3.fromRGB(
+        180,
+        180,
+        180
+    )
+
+Status.TextSize = 13
+Status.Font =
+    Enum.Font.Gotham
+
+Status.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+Status.Parent = Main
+
+--==============================================================
+-- TARGET LABEL
+--==============================================================
+
+local TargetLabel =
+    Instance.new("TextLabel")
+
+TargetLabel.Size =
+    UDim2.new(1, -30, 0, 28)
+
+TargetLabel.Position =
+    UDim2.new(0, 15, 0, 125)
+
+TargetLabel.BackgroundTransparency = 1
+
+TargetLabel.Text =
+    "TARGET: NONE"
+
+TargetLabel.TextColor3 =
+    Color3.fromRGB(
+        255,
+        255,
+        255
+    )
+
+TargetLabel.TextSize = 13
+TargetLabel.Font =
+    Enum.Font.GothamBold
+
+TargetLabel.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+TargetLabel.Parent = Main
+
+--==============================================================
+-- AGE STATUS
+--==============================================================
+
+local TargetAgeLabel =
+    Instance.new("TextLabel")
+
+TargetAgeLabel.Size =
+    UDim2.new(1, -30, 0, 25)
+
+TargetAgeLabel.Position =
+    UDim2.new(0, 15, 0, 153)
+
+TargetAgeLabel.BackgroundTransparency = 1
+
+TargetAgeLabel.Text =
+    "UMUR: NONE"
+
+TargetAgeLabel.TextColor3 =
+    Color3.fromRGB(
+        200,
+        200,
+        200
+    )
+
+TargetAgeLabel.TextSize = 13
+TargetAgeLabel.Font =
+    Enum.Font.Gotham
+
+TargetAgeLabel.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+TargetAgeLabel.Parent = Main
+
+--==============================================================
+-- AUTO PICKUP BUTTON
+--==============================================================
+
+local AutoButton =
+    Instance.new("TextButton")
+
+AutoButton.Size =
+    UDim2.new(1, -30, 0, 38)
+
+AutoButton.Position =
+    UDim2.new(0, 15, 0, 190)
+
+AutoButton.BackgroundColor3 =
+    Color3.fromRGB(
+        55,
+        55,
+        55
+    )
+
+AutoButton.BorderSizePixel = 0
+
+AutoButton.TextColor3 =
+    Color3.fromRGB(
+        255,
+        255,
+        255
+    )
+
+AutoButton.TextSize = 14
+AutoButton.Font =
+    Enum.Font.GothamBold
+
+AutoButton.Parent = Main
+
+local AutoCorner =
+    Instance.new("UICorner")
+
+AutoCorner.CornerRadius =
+    UDim.new(0, 7)
+
+AutoCorner.Parent = AutoButton
+
+--==============================================================
+-- TARGET LOCK BUTTON
+--==============================================================
+
+local LockButton =
+    Instance.new("TextButton")
+
+LockButton.Size =
+    UDim2.new(1, -30, 0, 38)
+
+LockButton.Position =
+    UDim2.new(0, 15, 0, 235)
+
+LockButton.BackgroundColor3 =
+    Color3.fromRGB(
+        55,
+        55,
+        55
+    )
+
+LockButton.BorderSizePixel = 0
+
+LockButton.TextColor3 =
+    Color3.fromRGB(
+        255,
+        255,
+        255
+    )
+
+LockButton.TextSize = 14
+LockButton.Font =
+    Enum.Font.GothamBold
+
+LockButton.Parent = Main
+
+local LockCorner =
+    Instance.new("UICorner")
+
+LockCorner.CornerRadius =
+    UDim.new(0, 7)
+
+LockCorner.Parent = LockButton
+
+--==============================================================
+-- UPDATE BUTTON TEXT
+--==============================================================
+
+local function UpdateButtons()
+
+    if AutoPickup then
+
+        AutoButton.Text =
+            "AUTO PICKUP : ON"
+
+        AutoButton.BackgroundColor3 =
+            Color3.fromRGB(
+                55,
+                120,
+                65
+            )
+
+    else
+
+        AutoButton.Text =
+            "AUTO PICKUP : OFF"
+
+        AutoButton.BackgroundColor3 =
+            Color3.fromRGB(
+                55,
+                55,
+                55
+            )
+
+    end
+
+    if TargetLock then
+
+        LockButton.Text =
+            "TARGET LOCK : ON"
+
+        LockButton.BackgroundColor3 =
+            Color3.fromRGB(
+                70,
+                90,
+                125
+            )
+
+    else
+
+        LockButton.Text =
+            "TARGET LOCK : OFF"
+
+        LockButton.BackgroundColor3 =
+            Color3.fromRGB(
+                55,
+                55,
+                55
+            )
+
+    end
+end
+
+AutoButton.MouseButton1Click:Connect(
+    function()
+
+        AutoPickup =
+            not AutoPickup
+
+        UpdateButtons()
+    end
+)
+
+LockButton.MouseButton1Click:Connect(
+    function()
+
+        TargetLock =
+            not TargetLock
+
+        if not TargetLock then
+
+            CurrentTarget = nil
+            CurrentTargetData = nil
+            CurrentTargetAge = nil
 
         end
 
+        UpdateButtons()
     end
 )
 
+UpdateButtons()
 
 --==============================================================
--- TOGGLE
+-- UPDATE UI
 --==============================================================
 
-ToggleButton.MouseButton1Click:Connect(
-    function()
+local function UpdateUI()
 
-        Running =
-            not Running
+    --==========================================================
+    -- SERVER STATUS
+    --==========================================================
 
+    if not BabiBandar then
 
-        if Running then
+        Status.Text =
+            "SERVER: BABIBANDAR TIDAK DITEMUKAN"
 
-            ToggleButton.Text =
-                "AUTO PICKUP: ON"
-
-            ToggleButton.BackgroundColor3 =
-                Color3.fromRGB(
-                    45,
-                    125,
-                    55
-                )
-
-
-            ClearTarget(
-                "SCANNING..."
+        Status.TextColor3 =
+            Color3.fromRGB(
+                230,
+                90,
+                90
             )
 
+    elseif not ServerData then
+
+        Status.Text =
+            "SERVER: DATA BELUM TERSEDIA"
+
+        Status.TextColor3 =
+            Color3.fromRGB(
+                230,
+                180,
+                70
+            )
+
+    else
+
+        local count = 0
+
+        if type(ServerData.ternak)
+            == "table" then
+
+            for _, data in pairs(
+                ServerData.ternak
+            ) do
+
+                if type(data) == "table" then
+                    count += 1
+                end
+            end
+        end
+
+        Status.Text =
+            "SERVER: OK | TERNAK: "
+            .. tostring(count)
+
+        Status.TextColor3 =
+            Color3.fromRGB(
+                100,
+                210,
+                120
+            )
+    end
+
+    --==========================================================
+    -- TARGET
+    --==========================================================
+
+    if CurrentTarget
+        and CurrentTarget.Parent then
+
+        local id =
+            GetBabiIdFromObject(
+                CurrentTarget
+            )
+
+        TargetLabel.Text =
+            "TARGET: Babi_"
+            .. tostring(id or "?")
+
+        if CurrentTargetAge then
+
+            TargetAgeLabel.Text =
+                "UMUR: "
+                .. FormatAge(
+                    CurrentTargetAge
+                )
+
+                .. " | MIN: "
+                .. tostring(MinAge)
+                .. " menit"
 
         else
 
-            ToggleButton.Text =
-                "AUTO PICKUP: OFF"
-
-            ToggleButton.BackgroundColor3 =
-                Color3.fromRGB(
-                    80,
-                    50,
-                    50
-                )
-
-
-            SetStatus(
-                "STOPPED"
-            )
+            TargetAgeLabel.Text =
+                "UMUR: NONE"
 
         end
 
+    else
+
+        TargetLabel.Text =
+            "TARGET: NONE"
+
+        TargetAgeLabel.Text =
+            "UMUR: NONE | MIN: "
+            .. tostring(MinAge)
+            .. " menit"
     end
-)
-
+end
 
 --==============================================================
--- INITIALIZE
+-- REFRESH LOOP
 --==============================================================
 
-task.spawn(
+task.spawn(function()
+
+    while Gui.Parent do
+
+        local success, errorMessage =
+            RefreshServerData()
+
+        if not success then
+
+            -- Jangan spam error.
+            -- UI akan menunjukkan status.
+
+        else
+
+            UpdateTarget()
+            UpdateUI()
+
+        end
+
+        task.wait(
+            REFRESH_INTERVAL
+        )
+    end
+end)
+
+--==============================================================
+-- TARGET SCAN LOOP
+--==============================================================
+
+task.spawn(function()
+
+    while Gui.Parent do
+
+        if os.clock() - LastTargetScan
+            >= TARGET_SCAN_INTERVAL then
+
+            LastTargetScan =
+                os.clock()
+
+            -- Jika target hilang,
+            -- segera cari pengganti.
+
+            if not IsTargetStillValid() then
+
+                CurrentTarget = nil
+                CurrentTargetData = nil
+                CurrentTargetAge = nil
+
+                UpdateTarget()
+
+            else
+
+                -- Jika target lock aktif,
+                -- perbarui umur datanya.
+
+                if CurrentTarget then
+
+                    local id =
+                        GetBabiIdFromObject(
+                            CurrentTarget
+                        )
+
+                    local data =
+                        FindTernakById(id)
+
+                    if data then
+
+                        local age =
+                            GetAgeMinutes(data)
+
+                        CurrentTargetData =
+                            data
+
+                        CurrentTargetAge =
+                            age
+
+                        -- Jika sudah tidak memenuhi
+                        -- MIN AGE, cari target baru.
+
+                        if not age
+                            or age < MinAge
+                            or data.kunci == true
+                            or data.bunting == true then
+
+                            CurrentTarget = nil
+                            CurrentTargetData = nil
+                            CurrentTargetAge = nil
+
+                            UpdateTarget()
+                        end
+                    end
+                end
+            end
+
+            UpdateUI()
+        end
+
+        task.wait(0.1)
+    end
+end)
+
+--==============================================================
+-- AUTO PICKUP LOOP
+--==============================================================
+
+task.spawn(function()
+
+    while Gui.Parent do
+
+        if AutoPickup then
+
+            pcall(function()
+                TryAutoPickup()
+            end)
+
+        end
+
+        task.wait(0.1)
+    end
+end)
+
+--==============================================================
+-- CHARACTER RESPAWN
+--==============================================================
+
+LocalPlayer.CharacterAdded:Connect(
     function()
 
         task.wait(1)
 
+        Busy = false
 
-        BabiBandar =
-            FindBabiBandar()
+        -- Target tetap dipertahankan jika
+        -- masih valid dan Target Lock ON.
 
+        if not TargetLock then
 
-        if BabiBandar then
-
-            SetStatus(
-                "BABIBANDAR READY"
-            )
-
-        else
-
-            SetStatus(
-                "BABIBANDAR NOT FOUND"
-            )
+            CurrentTarget = nil
+            CurrentTargetData = nil
+            CurrentTargetAge = nil
 
         end
 
+        UpdateUI()
     end
 )
 
-
 --==============================================================
--- MAIN LOOP
+-- INITIAL LOAD
 --==============================================================
 
-task.spawn(
-    function()
+task.spawn(function()
 
-        while ScreenGui.Parent do
+    task.wait(1)
 
-            task.wait(
-                SCAN_INTERVAL
-            )
+    local success =
+        RefreshServerData()
 
-
-            if not Running then
-                continue
-            end
-
-
-            --==================================================
-            -- TARGET SUDAH ADA
-            --==================================================
-
-            if CurrentTarget then
-
-                local valid =
-                    RefreshCurrentTarget()
-
-
-                if valid then
-
-                    continue
-
-                end
-
-
-                ClearTarget(
-                    "TARGET INVALID - RESCAN"
-                )
-
-            end
-
-
-            --==================================================
-            -- CARI TARGET BARU
-            --==================================================
-
-            AcquireTarget()
-
-        end
-
+    if success then
+        UpdateTarget()
     end
-)
 
-
---==============================================================
--- DRAG UI
---==============================================================
-
-local dragging = false
-
-local dragStart = nil
-
-local startPosition = nil
-
-
-Title.InputBegan:Connect(
-    function(input)
-
-        if input.UserInputType ==
-            Enum.UserInputType.MouseButton1
-            or input.UserInputType ==
-            Enum.UserInputType.Touch then
-
-
-            dragging = true
-
-            dragStart =
-                input.Position
-
-            startPosition =
-                Main.Position
-
-
-            input.Changed:Connect(
-                function()
-
-                    if input.UserInputState ==
-                        Enum.UserInputState.End then
-
-                        dragging = false
-
-                    end
-
-                end
-            )
-
-        end
-
-    end
-)
-
-
-Title.InputChanged:Connect(
-    function(input)
-
-        if input.UserInputType ==
-            Enum.UserInputType.MouseMovement
-            or input.UserInputType ==
-            Enum.UserInputType.Touch then
-
-
-            local connection
-
-
-            connection =
-                RunService.RenderStepped:Connect(
-                    function()
-
-                        if not dragging then
-
-                            connection:Disconnect()
-
-                            return
-
-                        end
-
-
-                        local delta =
-                            input.Position -
-                            dragStart
-
-
-                        Main.Position =
-                            UDim2.new(
-
-                                startPosition.X.Scale,
-
-                                startPosition.X.Offset +
-                                delta.X,
-
-                                startPosition.Y.Scale,
-
-                                startPosition.Y.Offset +
-                                delta.Y
-
-                            )
-
-                    end
-                )
-
-        end
-
-    end
-)
-
+    UpdateUI()
+end)
 
 --==============================================================
--- FINAL
+-- DEBUG OUTPUT
 --==============================================================
 
 print(
-    "=============================================="
+    "[BABI MANAGER] Loaded"
 )
 
 print(
-    "[BABI MANAGER] LOADED"
-)
-
-print(
-    "[BABI MANAGER] MIN AGE:",
-    MinimumAgeMinutes,
-    "MINUTES"
-)
-
-print(
-    "[BABI MANAGER] BABIBANDAR:",
+    "[BABI MANAGER] BabiBandar:",
     BabiBandar
+        and BabiBandar:GetFullName()
+        or "NOT FOUND"
 )
 
 print(
-    "=============================================="
+    "[BABI MANAGER] Min Age:",
+    MinAge,
+    "minutes"
 )
+
+print(
+    "[BABI MANAGER] Target Model:",
+    MODEL_TARGET
+)
+
+print(
+    "[BABI MANAGER] Prompt:",
+    PROMPT_ACTION
+)
+
+--==============================================================
+-- END
+--==============================================================
+```
